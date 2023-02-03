@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/Users/yangerjun/Desktop/cweb/cweb/build",
+  "command": "/usr/bin/clang++  -I/usr/local/Cellar/mysql/8.0.30/include -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -std=gnu++11 -o CMakeFiles/cweb.dir/main.cpp.o -c /Users/yangerjun/Desktop/cweb/cweb/main.cpp",
+  "file": "/Users/yangerjun/Desktop/cweb/cweb/main.cpp"
+}
+]

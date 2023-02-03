@@ -1,0 +1,1 @@
+/usr/bin/clang++ -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cweb.dir/main.cpp.o -o cweb   -L/usr/local/Cellar/mysql/8.0.30/lib 
