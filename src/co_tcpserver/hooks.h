@@ -4,13 +4,12 @@
 #include <sys/socket.h>
 
 namespace cweb {
+namespace tcpserver {
 namespace coroutine {
 
-ssize_t hook_read(int fd, void *buf, size_t nbyte) {
-    //阻塞与非阻塞
-    return 0;
-}
+ssize_t hook_read(int fd, void *buf, size_t nbyte);
 
+}
 }
 }
 #endif

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <memory>
+#include <mutex>
 
 #include "../util/priority_queue.h"
 
@@ -14,6 +15,8 @@ private:
     uint64_t microseconds_since_epoch_;
     
 public:
+    Time(int64_t microseconds) : microseconds_since_epoch_(microseconds) {}
+    
     inline int64_t MicroSecondsSinceEpoch() const{
         return microseconds_since_epoch_;
     }
@@ -40,6 +43,7 @@ public:
     static Time Now();
 };
 
+class TimerManager;
 class Timer {
 private:
     bool cancel_ = false;
@@ -49,9 +53,13 @@ private:
     std::function<void()> timer_callback_;
     
 public:
-    Timer(){}
+    friend TimerManager;
+    //毫秒
     Timer(uint64_t interval, std::function<void()> cb, int repeats = 1);
+    
+    Time ExecutionTime() const {return executionTime_;}
     bool Execute();
+    bool PretendExecute();
     void Cancel() {cancel_ = true;}
     
     friend bool operator < (const Timer& lt, const Timer& rt) {
@@ -75,12 +83,16 @@ public:
 class TimerManager {
 private:
     std::unique_ptr<util::PriorityQueue<Timer> > timers_;
+    std::vector<Timer*> timeout_timers_;
+    std::mutex mutex_;
     
 public:
     void AddTimer(Timer* timer);
     //获取超时事件
+    void ExecuteAllTimeoutTimer();
     bool PopOneTimeoutTimer(Timer*& timer);
     bool PopAllTimeoutTimer(std::vector<Timer*>& timers);
+    bool PopAllTimeoutFunctor(std::vector<std::function<void()>>& funcs);
     uint64_t NextTimeoutInterval();
 };
 

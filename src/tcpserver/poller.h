@@ -22,7 +22,7 @@ public:
     virtual void UpdateEvent(Event* event) = 0;
     virtual void RemoveEvent(Event* event) = 0;
     
-    virtual Time Poll(int timeout, std::vector<Event*>& activeEvents) = 0;
+    virtual Time Poll(uint64_t timeout, std::vector<Event*>& activeEvents) = 0;
     
 protected:
     std::unordered_map<int, Event*> events_map_;

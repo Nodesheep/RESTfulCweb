@@ -2,14 +2,12 @@
 #define CWEB_TCP_KQUEUEPOLLER_H_
 
 #include "poller.h"
-
 #include <sys/event.h>
 
 namespace cweb {
 namespace tcpserver {
 
 class EventLoop;
-//struct kevent;
 class KqueuePoller : public Poller {
     
 public:
@@ -19,7 +17,7 @@ public:
     virtual void UpdateEvent(Event* event) override;
     virtual void RemoveEvent(Event* event) override;
     
-    virtual Time Poll(int timeout, std::vector<Event*>& activeEvents) override;
+    virtual Time Poll(uint64_t timeout, std::vector<Event*>& activeEvents) override;
     
 private:
     int kqfd_;

@@ -36,6 +36,7 @@ __ZN4cweb9coroutine12context_swapEPNS0_16CoroutineContextES2_:
     movq 16(%rsi), %r13
     movq 24(%rsi), %r12
     movq 48(%rsi), %rbx
+    movq 64(%rsi), %rdi
     leaq 8(%rsp), %rsp
     pushq 40(%rsi) //
 

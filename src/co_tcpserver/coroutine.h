@@ -5,32 +5,40 @@
 #include <functional>
 
 namespace cweb {
+namespace tcpserver {
 namespace coroutine {
 
 class CoroutineContext;
+class Processer;
 class Coroutine {
-
+    
 public:
     enum State {
-        INIT,
+        READY,
         HOLD,
         EXEC,
         TERM
     };
-
-    Coroutine(void (*fn)());
+    
+    Coroutine(std::function<void()> func);
     void SwapIn();
     void SwapOut();
-    State State() {return state_;}
-
+    
+    void SetState(State state) {state_ = state;}
+    State State() const {return state_;}
+    
 private:
-    enum State state_ = INIT;
+    enum State state_ = READY;
     CoroutineContext* context_;
     void* stack_ptr_;
     std::function<void()> func_;
+    Processer* processer_;
+    
+    void run();
+    static void contextFunc(void* vp);
 };
 
-
+}
 }
 }
 
