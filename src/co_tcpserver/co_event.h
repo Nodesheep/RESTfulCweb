@@ -13,7 +13,10 @@ class CoEvent : public Event {
 public:
     virtual void HandleEvent(Time receiveTime) override;
     
+    int Flags() const {return flags;}
+    
 private:
+    int flags;
     Coroutine* read_coroutine_ = nullptr;
     Coroutine* write_coroutine_ = nullptr;
 };

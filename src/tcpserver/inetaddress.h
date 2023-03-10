@@ -9,14 +9,23 @@ namespace tcpserver {
 
 class InetAddress {
 public:
-    InetAddress(uint16_t port = 0, bool loopbackonly = false, bool ipv6 = false);
+    friend class Socket;
+    InetAddress() {}
+    InetAddress(uint16_t port, bool loopbackonly = false, bool ipv6 = false);
     InetAddress(const std::string& ip, uint16_t port, bool ipv6 = false);
+    InetAddress(const struct sockaddr_in addr) : addrv4_(addr) {}
+    InetAddress(const struct sockaddr_in6 addr) : addrv6_(addr) {}
+    
+    //验证加不加&的效果
+    void SetSockaddr(const struct sockaddr_in addr) {addrv4_ = addr;}
+    void SetSockaddr(const struct sockaddr_in6 addr) {addrv6_ = addr;}
     
 private:
     union {
         struct sockaddr_in addrv4_;
         struct sockaddr_in6 addrv6_;
     };
+    bool ipv6_ = false;
 };
 
 }

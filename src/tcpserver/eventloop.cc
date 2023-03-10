@@ -25,7 +25,6 @@ EventLoop::EventLoop()
    // poller_ = new PollPoller(this);
 #endif
     createWakeupfd();
-    
 }
 
 EventLoop::~EventLoop() {}
@@ -85,7 +84,7 @@ void EventLoop::loop() {
 
 void EventLoop::handleActiveEvents(Time time) {
     for(Event* event : active_events_) {
-        event->handleEvent(time);
+        event->HandleEvent(time);
     }
 }
 
@@ -102,7 +101,7 @@ void EventLoop::handleTasks() {
 }
 
 void EventLoop::handleTimeoutTimers() {
-    timermanger_->ExecuteAllTimeoutTimer();
+    timermanager_->ExecuteAllTimeoutTimer();
 }
 
 void EventLoop::createWakeupfd() {

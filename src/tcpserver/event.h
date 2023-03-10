@@ -40,6 +40,8 @@ public:
     
     virtual void HandleEvent(Time receiveTime);
     
+    void Remove();
+    
 protected:
     int fd_ = 0;
     int events_ = 0;

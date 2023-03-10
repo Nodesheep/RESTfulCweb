@@ -4,6 +4,7 @@ namespace cweb {
 namespace tcpserver {
 
 InetAddress::InetAddress(uint16_t port, bool loopbackonly, bool ipv6) {
+    ipv6_ = ipv6;
     if(ipv6) {
         memset(&addrv6_, 0, sizeof(addrv6_));
         addrv6_.sin6_family = AF_INET6;
@@ -18,6 +19,7 @@ InetAddress::InetAddress(uint16_t port, bool loopbackonly, bool ipv6) {
 }
 
 InetAddress::InetAddress(const std::string& ip, uint16_t port, bool ipv6) {
+    ipv6_ = ipv6;
     if(ipv6) {
         memset(&addrv6_, 0, sizeof(addrv6_));
         addrv6_.sin6_family = AF_INET6;

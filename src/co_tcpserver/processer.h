@@ -29,6 +29,7 @@ public:
     virtual void AddTask(Functor cb) override;
     virtual void AddTasks(std::vector<Functor>& cbs) override;
     
+    Coroutine* GetCurrentCoroutine();
     void AddCoroutine(Coroutine* co);
     static Coroutine* GetMainCoroutine();
 
