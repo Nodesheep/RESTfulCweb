@@ -1,56 +1,83 @@
 #include "logger.h"
-
+#include <sys/time.h>
+#include "threadlocal_memorypool.h"
+#include "pthread_keys.h"
 
 namespace cweb {
 
 namespace log {
 
-Logger::Logger(const std::string& name) {
-    
-}
+static const size_t kMaxLogContentLength = 256;
 
-void Logger::Log(LogLevel level, LogInfo* logInfo) {
-    if(level >= log_level_) {
-        for(auto& appender : appenders_) {
-            appender->log(logInfo);
-        }
+Logger::Logger(const std::string& module) : module_(module) {}
+
+Logger::~Logger() {
+    for(LogAppender* appender : appenders_) {
+        delete appender;
     }
 }
 
-void Logger::Debug(LogInfo *logInfo) {
-    Log(LOGLEVEL_DEBUG, logInfo);
+void Logger::Log(LogLevel level, const std::string &module, const std::string &tag, const char *format, ...) {
+    LogInfo* info = (LogInfo*)((util::MemoryPool*)pthread_getspecific(util::PthreadKeysSingleton::GetInstance()->TLSMemoryPool))->Allocate(sizeof(LogInfo));
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    int64_t seconds = tv.tv_sec;
+    info->log_level = level;
+    info->time = seconds * 1000 * 1000 + tv.tv_usec;
+    info->thread_id = (unsigned long int)pthread_self();
+    info->log_module = module;
+    info->log_tag = tag;
+    
+    char content[kMaxLogContentLength];
+    va_list valst;
+    va_start(valst, format);
+    int n = vsnprintf(content, kMaxLogContentLength, format, valst);
+    content[n] = '\0';
+    info->log_content = std::string(content);
+    va_end(valst);
+    
+    log(level, info);
 }
 
-void Logger::Info(LogInfo *logInfo) {
-    Log(LOGLEVEL_INFO, logInfo);
+void Logger::log(LogLevel level, LogInfo* loginfo) {
+    if(level >= log_level_) {
+        for(auto& appender : appenders_) {
+            appender->Log(loginfo);
+        }
+    }
 }
-
-void Logger::Warn(LogInfo *logInfo) {
-    Log(LOGLEVEL_WARN, logInfo);
-}
-
-void Logger::Error(LogInfo *logInfo) {
-    Log(LOGLEVEL_ERROR, logInfo);
-}
-
-void Logger::Fatal(LogInfo *logInfo) {
-    Log(LOGLEVEL_FATAL, logInfo);
-}
-
 
 void Logger::AddAppender(LogAppender* appender) {
     appenders_.push_back(appender);
 }
 
-Logger::shared_ptr LoggerManager::GetLogger(const std::string& name) {
-    if(loggers_.find(name) == loggers_.end()) {
-        //多线程
-        std::unique_lock<std::mutex> lock(mutex_);
-        Logger::shared_ptr logger(new Logger());
-        logger->AddAppender(new FileAppender());
-
-    }
-    return loggers_[name];
+LoggerManager::LoggerManager() {
+    formatter_ = new LogFormatter();
+    writer_ = new LogWriter();
+    writer_thread_ = std::thread([this](){
+        writer_->Run();
+    });
 }
+
+LoggerManager::~LoggerManager() {
+    writer_->Stop();
+    for(std::unordered_map<std::string, Logger*>::iterator iter = loggers_.begin(); iter != loggers_.end(); ++iter) {
+        delete iter->second;
+    }
+    delete formatter_;
+}
+
+Logger* LoggerManager::GetLogger(const std::string& module) {
+    Logger* logger = loggers_[module];
+    if(!logger) {
+        std::unique_lock<std::mutex> lock(mutex_);
+        logger = new Logger();
+        logger->AddAppender(new ConsoleAppender(formatter_));
+        logger->AddAppender(new FileAppender(formatter_, writer_, module));
+        loggers_[module] = logger;
+    }
+    return logger;
+}
+
 } 
 }

@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+/*
 #define R15 0
 #define R14 1
 #define R13 2
@@ -17,7 +18,37 @@
 //#define RCX 11
 #define RBX 6
 #define RSP 7
-#define RDI 8
+#define RDI 8*/
+
+
+#define RSP 0
+#define RIP 1
+#define RBX 2
+#define RDI 3
+#define RSI 4
+
+#define RBP 5
+#define R12 6
+#define R13 7
+#define R14 8
+#define R15 9
+#define RDX 10
+#define RCX 11
+#define R8 12
+#define R9 13
+
+enum {
+  kEIP = 0,
+  kEBP = 6,
+  kESP = 7,
+};
+
+enum {
+  kRDI = 7,
+  kRSI = 8,
+  kRETAddr = 9,
+  kRSP = 13,
+};
 
 namespace cweb {
 namespace tcpserver {
@@ -36,7 +67,7 @@ CoroutineContext::~CoroutineContext() {
 }
 
 void CoroutineContext::Init(size_t size, void (*fn)(void*), const void* vp) {
-    ss_sp = (char*)malloc(size); //堆 低->高
+    /*ss_sp = (char*)malloc(size); //堆 低->高
     //移动到高地址 栈 高->低
     char* sp = ss_sp + ss_size - sizeof(void*);
     
@@ -46,7 +77,9 @@ void CoroutineContext::Init(size_t size, void (*fn)(void*), const void* vp) {
     memset(regs, 0, sizeof(regs));
     
     //
-    *(void**)sp = (void*)fn;
+    void** ret_addr = (void**)(sp);
+    *ret_addr = (void*)fn;
+    //*(void**)sp = (void*)fn;
     
     //初始时栈顶位置
     regs[RBP] = sp + sizeof(void*);
@@ -54,6 +87,23 @@ void CoroutineContext::Init(size_t size, void (*fn)(void*), const void* vp) {
     regs[RDI] = (void*)vp;
     
     regs[RET] = (void*)fn; //函数返回地址
+*/
+    
+    
+    ss_sp = (char*)malloc(size);
+    char* sp = ss_sp + ss_size - sizeof(void*);
+    sp = (char*)((unsigned long)sp & -16LL);
+
+    memset(regs, 0, sizeof(regs));
+    void** ret_addr = (void**)(sp);
+    *ret_addr = (void*)fn;
+
+    regs[kRSP] = sp;
+
+    regs[kRETAddr] = (char*)fn;
+
+    regs[kRDI] = (char*)vp;
+   // regs[kRSI] = (char*)s1;
 }
 
 void CoroutineContext::ContextSwap(CoroutineContext *from, CoroutineContext *to) {

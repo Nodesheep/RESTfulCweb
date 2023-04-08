@@ -61,6 +61,10 @@ void ByteBuffer::ReadBytes(size_t len) {
     }
 }
 
+void ByteBuffer::WriteBytes(size_t len) {
+    writeindex_ += len;
+}
+
 void ByteBuffer::ReadAll() {
     readindex_ = kCheapPrepend;
     writeindex_ = kCheapPrepend;

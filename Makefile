@@ -1,13 +1,24 @@
 vpath %.s src/coroutine
-vpath %.cc src src/coroutine
+vpath %.cc src src/co_tcpserver src/tcpserver src/util src/cweb src/cweb/jsoncpp src/log
 # Makefile内容
-SRC_PATH := src src/coroutine
+SRC_PATH := src src/tcpserver src/tcpserver/base src/util src/cweb src/cweb/jsoncpp src/log
 OBJ_PATH = build
 #SRC=./src/main.cc ./src/coroutine/coroutine_context.cc ./src/coroutine/context_swap.s
 SRC=$(foreach path, $(SRC_PATH), $(wildcard $(addprefix $(path)/*, .cc .s)))
 OBJ=$(addprefix $(OBJ_PATH)/, $(addsuffix .o,$(notdir $(basename $(SRC)))))
 #SRCS=./src/main.cc ./src/coroutine/coroutine_context.cc ./src/coroutine/context_swap.s
 #OBJS=./build/main.o ./build/coroutine_context.o ./build/context_swap.o
+include_paths := src/tcpserver/base src/co_tcpserver src/tcpserver src/util src/cweb src/cweb/jsoncpp src/log \
+				thirdparty/boost/1.79.0_1/include/boost
+
+library_paths := thirdparty/boost/1.79.0_1/lib
+
+include_paths := $(include_paths:%=-I%)
+library_paths := $(library_paths:%=-L%)
+
+compile_flags := -std=c++11 -w -g -O0 $(include_paths)
+link_flags 	  := -pthread $(library_paths)
+
 CUR_DIR  = $(shell pwd)
 #D_OBJ=./build
 #OBJS2=$(SRCS:.cc=.o)
@@ -19,15 +30,16 @@ $(info "OBJ:$(OBJ)")
 
 $(shell mkdir -p $(CUR_DIR)/$(OBJ_PATH))
 
-TARGET=context_test
+TARGET=cweb
 
 $(OBJ_PATH)/$(TARGET) : $(OBJ)
-	g++ $^ -o $@ -std=c++11 -w
+	g++ $^ -o $@ $(link_flags)
 
 $(OBJ_PATH)/%.o : %.cc
-	g++ -c $< -o $@
+	g++ -c $< -o $@ $(compile_flags)
+	
 $(OBJ_PATH)/%.o : %.s
-	g++ -c $< -o $@
+	g++ -c $< -o $@ $(compile_flags)
 	
 #./build/main.o : ./src/main.cc
 	#g++ -c ./src/main.cc -o ./build/main.o

@@ -42,11 +42,7 @@ private:
 
     size_t memorylistsIndex(size_t bytes);
     void* allocateInMemoryblocks(size_t bytes);
-
-
 };
-
-static __thread MemoryPool* TLSMemoryPool;
 
 }
 }

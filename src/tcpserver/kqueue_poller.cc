@@ -1,4 +1,4 @@
-#ifdef MACOS
+//#ifdef MACOS
 
 #include "kqueue_poller.h"
 #include "timer.h"
@@ -18,7 +18,7 @@ KqueuePoller::~KqueuePoller() {
     ::close(kqfd_);
 }
 
-Time KqueuePoller::Poll(uint64_t timeout, std::vector<Event *>& activeEvents) {
+Time KqueuePoller::Poll(int timeout, std::vector<Event *>& activeEvents) {
     
     int ret = kevent(kqfd_, NULL, 0, events_, 1024, nullptr);
     Time now = Time::Now();
@@ -43,6 +43,7 @@ Time KqueuePoller::Poll(uint64_t timeout, std::vector<Event *>& activeEvents) {
                 Event* event = evptr->second;
                 if(ev->filter == EVFILT_READ) event->SetRevents(READ_EVENT);
                 else if(ev->filter == EVFILT_WRITE) event->SetRevents(WRITE_EVENT);
+                active_events[event->fd_] = event;
             }
         }
         
@@ -90,4 +91,4 @@ void KqueuePoller::RemoveEvent(Event* event) {
 }
 }
 
-#endif
+//#endif

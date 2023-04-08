@@ -59,6 +59,7 @@ public:
     int ReadFd(int fd);
     void ReadUtil(const char* end);
     void ReadBytes(size_t len);
+    void WriteBytes(size_t len);
     void ReadAll();
     
     const char* ReadJSON();

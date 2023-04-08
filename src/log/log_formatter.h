@@ -30,7 +30,7 @@ private:
     void parseLogpattern();
 public:
     //[%d][%l][%T][%C][%m][%t][%c]%n
-    LogFormatter(const std::string& pattern);
+    LogFormatter(const std::string& pattern = "[%d][%l][%T][%m][%t][%c]%n");
     
     std::string Format(LogInfo* loginfo);
 };

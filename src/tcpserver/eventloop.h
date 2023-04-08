@@ -3,10 +3,12 @@
 
 #include <mutex>
 #include <vector>
-#include <thread>
+#include <pthread.h>
 #include <memory>
+#include "threadlocal_memorypool.h"
 
 namespace cweb {
+
 namespace tcpserver {
 
 class Poller;
@@ -23,24 +25,27 @@ public:
     ~EventLoop();
     
     virtual void Run();
-    virtual void Stop();
     virtual void Quit();
     
     virtual void AddTask(Functor cb);
     virtual void AddTasks(std::vector<Functor>& cbs);
-    virtual Timer* AddTimer(uint64_t ms, Functor cb, int repeats = 1);
+    virtual Timer* AddTimer(uint64_t s, Functor cb, int repeats = 1);
+    void RemoveTimer(Timer* timer);
     virtual void UpdateEvent(Event* event);
     virtual void RemoveEvent(Event* event);
     
-    bool isInLoopThread() const {return thread_id_ == std::this_thread::get_id();}
+    bool isInLoopThread() const {return tid_ == pthread_self();}
 
 protected:
     bool running_ = false;
+    Poller* poller_;
+    util::MemoryPool* memorypool_;
     std::mutex mutex_;
     TimerManager* timermanager_;
+    std::vector<Event*> active_events_;
     
-    virtual void loop();
-    virtual void wakeup();
+    void loop();
+    void wakeup();
     
     void createWakeupfd();
     void handleActiveEvents(Time time);
@@ -49,17 +54,16 @@ protected:
     void handleWakeup();
     
 private:
-    Poller* poller_;
     std::vector<Functor> tasks_;
     std::vector<Timer*> timeout_timers_;
    // std::vector<Timer*> timers_;
     
     int wakeup_fd_[2];
     Event* wakeup_event_;
-    const std::thread::id thread_id_;
-    std::vector<Event*> active_events_;
+    pthread_t tid_;
     
 };
+
 
 }
 }

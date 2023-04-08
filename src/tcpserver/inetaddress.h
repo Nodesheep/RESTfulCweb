@@ -20,6 +20,10 @@ public:
     void SetSockaddr(const struct sockaddr_in addr) {addrv4_ = addr;}
     void SetSockaddr(const struct sockaddr_in6 addr) {addrv6_ = addr;}
     
+    bool IsIPv6() const {return ipv6_;}
+    struct sockaddr_in* Addrv4() {return &addrv4_;}
+    struct sockaddr_in6* Addrv6() {return &addrv6_;}
+    
 private:
     union {
         struct sockaddr_in addrv4_;

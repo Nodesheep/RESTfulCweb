@@ -1,11 +1,12 @@
 #ifndef CWEB_TCP_TCPCONNECTION_H_
 #define CWEB_TCP_TCPCONNECTION_H_
 
-#include "../util/bytebuffer.h"
 #include "timer.h"
+#include "connection.h"
 #include <memory>
 #include <string>
 #include <functional>
+#include "connection.h"
 
 namespace cweb {
 namespace tcpserver {
@@ -15,43 +16,33 @@ class Socket;
 class Event;
 class InetAddress;
 class Time;
-class TcpConnection {
-    
-private:
-    typedef std::function<void(TcpConnection*)> CloseCallback;
-    typedef std::function<void(TcpConnection*, util::ByteBuffer*, Time)> MessageCallback;
-    
-    EventLoop* ownerloop_;
-    std::string id_;
-    Socket* socket_;
-    Event* event_;
-    InetAddress* iaddr_;
-    bool keep_alive_;
-    util::ByteBuffer outputbuffer_;
-    util::ByteBuffer inputbuffer_;
-    CloseCallback close_callback_;
-    CloseCallback remove_request_callback_;
-    MessageCallback message_callback_;
-    
+class Timer;
+class TcpConnection : public Connection {
+protected:
     void handleRead(Time time);
     void handleWrite();
     void handleClose();
+    void handleTimeout();
     void sendInLoop(const void* data, size_t len);
     void sendBufferInLoop(util::ByteBuffer* buffer);
+    void connectEstablished();
+    
+    EventLoop* ownerloop_ = nullptr;
+    Socket* socket_ = nullptr;
+    Event* event_ = nullptr;
+    Timer* timeout_timer_;
     
 public:
     friend class TcpServer;
     
-    TcpConnection(EventLoop* loop, Socket* socket, InetAddress* addr, const std::string& id) {};
+    TcpConnection(EventLoop* loop, Socket* socket, InetAddress* addr, const std::string& id);
+    virtual ~TcpConnection();
     
     bool KeepAlive() const {return keep_alive_;}
-    void Send(util::ByteBuffer* buf);
-    void Send(const util::StringPiece& data);
-    
-    void SetCloseCallback(CloseCallback cb) {close_callback_ = std::move(cb);}
-    void SetRemoveRequestCallback(CloseCallback cb) {remove_request_callback_ = std::move(cb);}
-    
     EventLoop* Ownerloop() const {return ownerloop_;}
+    
+    virtual void Send(util::ByteBuffer* buf) override;
+    virtual void Send(const util::StringPiece& data) override;
     
 };
 

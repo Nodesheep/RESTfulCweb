@@ -3,65 +3,112 @@
 
 #include <stddef.h>
 #include <assert.h>
+#include <type_traits>
 
 namespace cweb {
 namespace util {
 
+class LinkedListNode {
+public:
+    LinkedListNode* pre = nullptr;
+    LinkedListNode* next = nullptr;
+};
+
 template <typename T>
 class LinkedList {
+    static_assert((std::is_base_of<LinkedListNode, T>::value), "T must inherit LinkedListNode");
 private:
-    struct Node {
-        T* value;
-        Node* next;
-        Node* pre;
-    };
-    Node* head_ = nullptr;
-    Node* tail_ = nullptr;
+    T* head_ = nullptr;
+    T* tail_ = nullptr;
     size_t size_;
+    
+    void push(T* begin, T* end, size_t size) {
+        if(size_ == 0) {
+            head_ = begin;
+            tail_ = end;
+            size_ = size;
+        }else {
+            tail_->next = begin;
+            begin->pre = tail_;
+            //end->next = head_;
+            //head_->pre = end;
+            end->next = nullptr;
+            tail_ = end;
+            size_ += size;
+        }
+    }
     
 public:
     LinkedList() : size_(0) {}
     
-    void FrontLockFree(T*& val) {
-        val = (T*)head_;
-    }
-    
-    void PushBackLockFree(T*& val) {
-        if(val == nullptr) return;
-        Node* newnode = new Node;
-        newnode->value = val;
-        
-        if(size_ == 0) {
-            head_ = newnode;
-            tail_ = newnode;
-            head_->next = tail_;
+    T* Pop() {
+        T* value = head_ ? head_ : nullptr;
+        if(value == nullptr) return value;
+        if(size_ == 1) {
+            Clear();
+        }else {
+            head_ = (T*)(head_->next);
             head_->pre = tail_;
             tail_->next = head_;
-            tail_->pre = head_;
+            --size_;
+        }
+        return value;
+    }
+    
+    void Push(T* val) {
+        if(val == nullptr) return;
+        
+        if(size_ == 0) {
+            head_ = tail_ = val;
+            head_->next = nullptr;
+            tail_->pre = nullptr;
         }else {
-            newnode->next = tail_->next;
-            tail_->next  = newnode;
-            newnode->pre = tail_;
-            tail_ = newnode;
-            head_->pre = tail_;
+            tail_->next = val;
+            val->pre = tail_;
+            val->next = nullptr;
+            tail_ = val;
         }
         ++size_;
     }
     
-    void PopFrontLock(T*& val);
-    void PushBackLock(T*& val);
+    void Push(LinkedList<T>& list) {
+        push(list.Front(), list.Back(), list.Size());
+        list.Clear();
+    }
+    
+    T* Front() {
+        return head_ ? head_ : nullptr;
+    }
+    
+    T* Back() {
+        return tail_ ? tail_ : nullptr;
+    }
+    
+    void Clear() {
+        head_ = tail_ = nullptr;
+        size_ = 0;
+    }
     
     void Erase(T* val) {
         assert(val != nullptr);
-        Node* node = (Node *)val;
-        assert(node->pre != nullptr && node->next != nullptr);
-        node->pre->next = node->next;
-        node->next->pre = node->pre;
+        if(val->pre == nullptr) {
+            head_ = (T*)head_->next;
+            if(head_) head_->pre = nullptr;
+        }else if(val->next == nullptr){
+            tail_ = (T*)val->pre;
+            if(tail_) tail_->next = nullptr;
+        }else {
+            val->pre->next = val->next;
+            val->next->pre = val->pre;
+        }
+        --size_;
     }
     
-    void Next(T* current, T*& next) {
-    
+    T* Next(T* current) {
+        return current->next ? (T*)current->next : nullptr;
     }
+    
+    size_t Size() {return size_;}
 
 };
 

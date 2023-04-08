@@ -13,23 +13,27 @@ class LockfreeQueue {
 
 private:
     std::vector<T> data_;
-    std::atomic<int> front_ = 0;
-    std::atomic<int> back_ = 0;
-    std::atomic<int> write_ = 0;
+    std::atomic<int> front_ = {0};
+    std::atomic<int> back_ = {0};
+    std::atomic<int> write_ = {0};
     int capacity_;
     
 public:
     //模版类的实现与声明需都放在h文件中
     //能不能存智能指针？
-    LockfreeQueue<T>(int capacity) : capacity_(capacity), data_(std::vector<T>(capacity)){}
+    LockfreeQueue<T>(int capacity = 100) : capacity_(capacity), data_(std::vector<T>(capacity)){}
+    LockfreeQueue<T>(const LockfreeQueue<T>& queue) {
+        capacity_ = queue.capacity_;
+        data_ = queue.data_;
+    }
     
-    bool MultiplePush(const T& val) {
+    bool MultiplePush(const T val) {
         int write, back;
 
         do {
             write = write_.load(std::memory_order_relaxed);
             if((write + 1) % capacity_ == front_.load(std::memory_order_acquire)) return false;
-        }while(!write_.compare_exchange_strong(write, (write + 1) % capacity_), std::memory_order_relaxed);
+        }while(!write_.compare_exchange_strong(write, (write + 1) % capacity_, std::memory_order_relaxed));
 
         data_[write] =  val;
 
@@ -52,7 +56,7 @@ public:
         return true;
     }
     
-    bool SinglePush(const T& val) {
+    bool SinglePush(const T val) {
         int back = back_.load(std::memory_order_relaxed);
         
         if((back + 1) % capacity_ == front_.load(std::memory_order_acquire)) return false;

@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <functional>
 #include <tuple>
+#include <sys/time.h>
 
 namespace cweb {
 namespace log {
@@ -29,12 +30,13 @@ class DataFormatItem : public LogFormatItem {
 public:
     DataFormatItem(const std::string& str = "") {}
     virtual void Format(std::ostream& os, LogInfo* info) override {
-        struct tm tm;
-        time_t time = info->time;
-        localtime_r(&time, &tm);
-        char buf[64];
-        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
-        os << buf;
+        char timeStr[128];
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        time_t seconds = tv.tv_sec;
+        struct tm* tm = localtime(&seconds);
+        strftime(timeStr, 128, "%Y-%m-%d %H:%M:%S", tm);
+        os << std::string(timeStr);
     }
 };
 
@@ -77,7 +79,7 @@ class CoroutineIDFormatItem : public LogFormatItem {
 public:
     CoroutineIDFormatItem(const std::string& str = "") {}
     virtual void Format(std::ostream& os, LogInfo* info) override {
-        os << info->coroutine_id;
+        //os << info->coroutine_id;
     }
 };
 
@@ -111,6 +113,7 @@ LogFormatItem* LogFormatItemFactory::GetFormatItem(const std::string& type, cons
     static std::unordered_map<std::string, std::function<LogFormatItem*(const std::string& str)> > format_item_factory = {
 #define ITEM(type, I) {#type, [](const std::string& str) {return new I(str);}}
         ITEM(s, StringFormatItem),
+        ITEM(d, DataFormatItem),
         ITEM(n, NewLineFormatItem),
         ITEM(l, LevelFormatItem),
         ITEM(T, ThreadIDFormatItem),

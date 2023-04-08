@@ -7,16 +7,23 @@ namespace cweb {
 namespace tcpserver {
 namespace coroutine {
 
+class CoEventLoop;
 class Coroutine;
 class CoEvent : public Event {
     
 public:
+    friend CoEventLoop;
+    CoEvent(CoEventLoop* loop, int fd);
+    virtual ~CoEvent() {}
     virtual void HandleEvent(Time receiveTime) override;
     
-    int Flags() const {return flags;}
+    int Flags() const {return flags_;}
+    void ExecuteReadCoroutine();
+    void ExecuteWriteCoroutine();
+    void RemoveCoroutine(Coroutine* co);
     
 private:
-    int flags;
+    int flags_ = 0;
     Coroutine* read_coroutine_ = nullptr;
     Coroutine* write_coroutine_ = nullptr;
 };

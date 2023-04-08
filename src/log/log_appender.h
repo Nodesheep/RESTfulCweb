@@ -5,6 +5,9 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <thread>
+#include <fstream>
+#include "log_writer.h"
 
 namespace cweb {
 
@@ -12,11 +15,16 @@ namespace log {
 
 class LogInfo;
 class LogfilePipe;
+class LogFormatter;
 
 class LogAppender {
+protected:
+    LogFormatter* formatter_;
+    
 public:
-
-    virtual void log(LogInfo* logInfo) = 0;
+    LogAppender(LogFormatter* formatter) : formatter_(formatter) {}
+    virtual ~LogAppender() {}
+    virtual void Log(LogInfo* logInfo) = 0;
 
 };
 
@@ -26,28 +34,39 @@ private:
     std::mutex mutex_;
 
 public:
-    virtual void log(LogInfo* logInfo) override;
+    ConsoleAppender(LogFormatter* formatter) : LogAppender(formatter) {}
+    virtual ~ConsoleAppender() {}
+    virtual void Log(LogInfo* logInfo) override;
 
 };
 
 class FileAppender : public LogAppender {
 
 private:
-    std::string filepath_;
+    std::string filepath_ = "";
+    //写入时是多写单读
     LogfilePipe* logging_pipe_;
-    std::vector<LogfilePipe* > full_pipes_;
-    std::vector<LogfilePipe* > writing_pipes_;
+    //回收时是单写多读
+    LogfilePipe* retrieving_pipe_;
+    LogWriter* writer_;
+    std::string module_;
     std::mutex mutex_;
+    std::condition_variable cond_;
+    std::ofstream ofs_;
+    bool writing_ = false;
 
+    bool createFilepath();
     void writeLogsfile();
 
 public:
-    virtual void log(LogInfo* logInfo) override;
+    FileAppender(LogFormatter* formatter, LogWriter* writer, const std::string& module);
+    virtual ~FileAppender();
+    virtual void Log(LogInfo* logInfo) override;
 
 };
 
 class DailyFileAppender : public FileAppender {
-   // virtual void log(LogInfo::shared_ptr logInfo) override;
+    
 };
 
 class LimitSizeFileAppender : public FileAppender {

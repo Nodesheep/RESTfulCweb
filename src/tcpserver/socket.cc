@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include "inetaddress.h"
 #include <unistd.h>
+#include "eventloop.h"
 
 static const int kMaxConnCount = 128;
 namespace cweb {
@@ -24,10 +25,18 @@ Socket* Socket::CreateNonblockFdAndBind(InetAddress* addr) {
         ret = ::bind(fd, (struct sockaddr*)&addr->addrv4_, static_cast<socklen_t>(sizeof(struct sockaddr_in)));
     }
     
+    if(ret < 0) return nullptr;
+    
     Socket* socket = new Socket(fd);
     socket->SetNonBlock();
     
     return socket;
+}
+
+Socket::~Socket() {
+    if(connected_) {
+        Close();
+    }
 }
 
 int Socket::Listen() {

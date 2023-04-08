@@ -2,13 +2,15 @@
 #include "event.h"
 #include "timer.h"
 
-#ifdef UNIX
+//#ifdef UNIX
 #include "kqueue_poller.h"
-#elsif LINUX
-#include "epoll_poller.h"
-#else
+//#elsif LINUX
+//#include "epoll_poller.h"
+//#else
+//#include "poll_poller.h"
+//#endif
 #include "poll_poller.h"
-#endif
+#include "pthread_keys.h"
 
 #include <unistd.h>
 
@@ -16,30 +18,32 @@ namespace cweb {
 namespace tcpserver {
 
 EventLoop::EventLoop()
-:thread_id_(std::this_thread::get_id()) {
-#ifdef UNIX
-    poller_ = new KqueuePoller(this);
-#elsif LINUX
-    //poller_ = new PollPoller(this);
-#else
+:tid_(pthread_self()) {
+//#ifdef UNIX
+   // poller_ = new KqueuePoller(this);
+//#elsif LINUX
+    poller_ = new PollPoller(this);
+//#else
    // poller_ = new PollPoller(this);
-#endif
+//#endif
+    timermanager_ = new TimerWheelManager();
+    memorypool_ = new util::MemoryPool();
     createWakeupfd();
 }
 
 EventLoop::~EventLoop() {}
 
 void EventLoop::Run() {
+    pthread_setspecific(util::PthreadKeysSingleton::GetInstance()->TLSMemoryPool, memorypool_);
     running_ = true;
     loop();
 }
 
-void EventLoop::Stop() {
-    running_ = false;
-}
-
 void EventLoop::Quit() {
-    //收尾工作
+    running_ = false;
+    if(!isInLoopThread()) {
+        wakeup();
+    }
 }
 
 void EventLoop::AddTask(Functor cb) {
@@ -48,6 +52,7 @@ void EventLoop::AddTask(Functor cb) {
     }else {
         std::unique_lock<std::mutex> lock(mutex_);
         tasks_.push_back(std::move(cb));
+        wakeup();
     }
 }
 
@@ -64,17 +69,30 @@ void EventLoop::AddTasks(std::vector<Functor>& cbs) {
     }
 }
 
-Timer* EventLoop::AddTimer(uint64_t ms, Functor cb, int repeats) {
-    Timer* timer = new Timer(ms, cb, repeats);
+Timer* EventLoop::AddTimer(uint64_t s, Functor cb, int repeats) {
+    Timer* timer = new Timer(s, cb, repeats);
     //线程安全
     timermanager_->AddTimer(timer);
     return timer;
 }
 
+void EventLoop::RemoveTimer(Timer *timer) {
+    timermanager_->RemoveTimer(timer);
+}
+
+void EventLoop::UpdateEvent(Event *event) {
+    poller_->UpdateEvent(event);
+}
+
+void EventLoop::RemoveEvent(Event *event) {
+    poller_->RemoveEvent(event);
+}
+
 void EventLoop::loop() {
     Time now = Time::Now();
     while(running_) {
-        uint64_t timeout = timermanager_->NextTimeoutInterval();
+        active_events_.clear();
+        int timeout = timermanager_->NextTimeoutInterval();
         now = poller_->Poll(timeout, active_events_);
         handleActiveEvents(now);
         handleTasks();
@@ -101,7 +119,13 @@ void EventLoop::handleTasks() {
 }
 
 void EventLoop::handleTimeoutTimers() {
-    timermanager_->ExecuteAllTimeoutTimer();
+    //timermanager_->ExecuteAllTimeoutTimer();
+    std::vector<Timer*> timeouts;
+    if(timermanager_->PopAllTimeoutTimer(timeouts)) {
+        for(Timer* timeout : timeouts) {
+            timeout->Execute();
+        }
+    }
 }
 
 void EventLoop::createWakeupfd() {

@@ -22,8 +22,7 @@ public:
     //%n 换行
     uint64_t time = 0; //%d
     LogLevel log_level; //%l
-    uint32_t thread_id; //&T
-    uint32_t coroutine_id; //%C
+    unsigned long int thread_id; //&T
     std::string log_module; //%m
     std::string log_tag; //%t
     std::string log_content; //%c

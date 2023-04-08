@@ -18,22 +18,21 @@ class KqueuePoller;
 class Event {
 public:
     friend KqueuePoller;
+    friend class PollPoller;
     friend EventLoop;
     Event(EventLoop* loop, int fd) : loop_(loop), fd_(fd) {}
     
     typedef std::function<void()> EventCallback;
     typedef std::function<void(Time)> ReadEventCallback;
     
-    void SetReadCallback(ReadEventCallback cb) { read_callback_ = std::move(cb); }
-    void SetWriteCallback(EventCallback cb) { write_callback_ = std::move(cb); }
-    void SetCloseCallback(EventCallback cb) { finishCallback_ = std::move(cb); }
-    void SetErrorCallback(EventCallback cb) { errorCallback_ = std::move(cb); }
-    
     void SetRevents(short revents) {revents_ = revents;}
     void AddRevents(short revents) {revents_ |= revents;}
     
-    void EnableReading() {events_ |= READ_EVENT;}
-    void EnableWriting() {events_ |= WRITE_EVENT;}
+    void EnableReading();
+    void EnableWriting();
+    void DisableReading();
+    void DisableWriting();
+    void DisableAll();
     
     bool Readable() const {return events_ & READ_EVENT;}
     bool Writable() const {return events_ & WRITE_EVENT;}
@@ -42,6 +41,12 @@ public:
     
     void Remove();
     
+    void SetReadCallback(ReadEventCallback cb) { read_callback_ = std::move(cb); }
+    void SetWriteCallback(EventCallback cb) { write_callback_ = std::move(cb); }
+    void SetCloseCallback(EventCallback cb) { finishCallback_ = std::move(cb); }
+    void SetErrorCallback(EventCallback cb) { errorCallback_ = std::move(cb); }
+    
+    int Fd() const {return fd_;}
 protected:
     int fd_ = 0;
     int events_ = 0;
@@ -52,6 +57,8 @@ protected:
     EventCallback write_callback_;
     EventCallback finishCallback_;
     EventCallback errorCallback_;
+    
+    void update();
 };
 
 }

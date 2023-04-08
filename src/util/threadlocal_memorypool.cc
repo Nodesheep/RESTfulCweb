@@ -86,6 +86,7 @@ void* MemoryPool::allocateInMemoryblocks (size_t bytes) {
         memoryblocks_.push_back(block);
         bytes_remaining_ = kMemoryBlockSize;
         allocptr = block;
+        alloc_ptr_ = block;
         alloc_ptr_ += bytes;
         bytes_remaining_ -= bytes;
     }

@@ -5,8 +5,11 @@
 #include <memory>
 #include <mutex>
 
-#include "../util/priority_queue.h"
+#include "priority_queue.h"
+#include "linked_list.h"
 
+
+//TODO 堆定时器导致cancel时timer无法被立即销毁，后续改用时间轮
 namespace cweb {
 namespace tcpserver {
 
@@ -31,6 +34,10 @@ public:
         return *this;
     }
     
+    inline uint64_t operator - (const Time& time) {
+        return microseconds_since_epoch_ - time.microseconds_since_epoch_;
+    }
+    
     friend bool operator < (const Time& lt, const Time& rt) {
         return lt.MicroSecondsSinceEpoch() < rt.MicroSecondsSinceEpoch();
     }
@@ -44,23 +51,33 @@ public:
 };
 
 class TimerManager;
-class Timer {
+class TimerWheelManager;
+class Timer : public util::LinkedListNode {
 private:
     bool cancel_ = false;
     Time executionTime_;
     uint64_t interval_;
     int repeats_;
     std::function<void()> timer_callback_;
+    int position_[2];
+    bool poped_ = false;
     
 public:
     friend TimerManager;
+    friend TimerWheelManager;
     //毫秒
     Timer(uint64_t interval, std::function<void()> cb, int repeats = 1);
     
     Time ExecutionTime() const {return executionTime_;}
+    uint64_t ExecutionInterval() {return executionTime_ - Time::Now();}
     bool Execute();
     bool PretendExecute();
     void Cancel() {cancel_ = true;}
+    
+    void setPosition(int layers, int step) {
+        position_[0] = layers;
+        position_[1] = step;
+    }
     
     friend bool operator < (const Timer& lt, const Timer& rt) {
         return lt.executionTime_ < rt.executionTime_;
@@ -80,20 +97,47 @@ public:
     
 };
 
+//小顶堆弃用
 class TimerManager {
 private:
-    std::unique_ptr<util::PriorityQueue<Timer> > timers_;
+    util::PriorityQueue<Timer> timers_;
     std::vector<Timer*> timeout_timers_;
     std::mutex mutex_;
     
 public:
-    void AddTimer(Timer* timer);
+    TimerManager();
+    virtual ~TimerManager();
+    virtual void AddTimer(Timer* timer);
     //获取超时事件
-    void ExecuteAllTimeoutTimer();
-    bool PopOneTimeoutTimer(Timer*& timer);
-    bool PopAllTimeoutTimer(std::vector<Timer*>& timers);
-    bool PopAllTimeoutFunctor(std::vector<std::function<void()>>& funcs);
-    uint64_t NextTimeoutInterval();
+    virtual void ExecuteAllTimeoutTimer();
+    virtual bool PopOneTimeoutTimer(Timer*& timer);
+    virtual bool PopAllTimeoutTimer(std::vector<Timer*>& timers);
+    virtual bool PopAllTimeoutFunctor(std::vector<std::function<void()>>& funcs);
+    virtual int NextTimeoutInterval();
+    virtual void RemoveTimer(Timer* timer) = 0;
+};
+
+class TimerWheelManager : public TimerManager {
+private:
+    uint64_t tickms_;
+    int wheel_size_;
+    int layers_;
+    std::vector<int> steps_;
+    std::vector<int> timers_cnts_;
+    std::vector<std::vector<util::LinkedList<Timer>>> timers_wheels_;
+    std::mutex mutex_;
+    Time last_rotate_time_;
+    void addTimer(Timer* timer);
+    
+public:
+    TimerWheelManager(uint64_t tickms = 1, int wheelsize = 100, int layers = 3);
+    virtual ~TimerWheelManager();
+    
+    virtual void AddTimer(Timer* timer) override;
+    virtual bool PopAllTimeoutFunctor(std::vector<std::function<void()>>& funcs) override;
+    virtual bool PopAllTimeoutTimer(std::vector<Timer*>& timers) override;
+    virtual int NextTimeoutInterval() override;
+    virtual void RemoveTimer(Timer* timer) override;
 };
 
 }

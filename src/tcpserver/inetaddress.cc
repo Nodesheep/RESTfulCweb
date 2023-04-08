@@ -29,7 +29,8 @@ InetAddress::InetAddress(const std::string& ip, uint16_t port, bool ipv6) {
         memset(&addrv4_, 0, sizeof(addrv4_));
         addrv4_.sin_family = AF_INET;
         addrv4_.sin_port = htons(port);
-        ::inet_pton(AF_INET, ip.c_str(), &addrv4_.sin_addr);
+        addrv4_.sin_addr.s_addr = htonl(INADDR_ANY);
+        //::inet_pton(AF_INET, ip.c_str(), &addrv4_.sin_addr);
     }
 }
 
