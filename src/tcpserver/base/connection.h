@@ -6,6 +6,8 @@
 #include "timer.h"
 #include <unordered_map>
 #include <vector>
+#include <queue>
+#include <iostream>
 
 namespace cweb {
 namespace tcpserver {
@@ -30,6 +32,8 @@ protected:
     CloseCallback close_callback_;
     MessageCallback message_callback_;
     std::vector<CloseCallback> close_handlers_;
+    std::queue<std::iostream*> stream_queue_;
+    std::iostream* current_stream_ = nullptr;
     
     void handleRead(Time time);
     void handleWrite();
@@ -54,6 +58,7 @@ public:
     void AddCloseHandlers(CloseCallback handler) {close_handlers_.push_back(std::move(handler));}
     virtual void Send(util::ByteBuffer* buf) = 0;
     virtual void Send(const util::StringPiece& data) = 0;
+    virtual void Send(std::iostream* stream) = 0;
 };
 
 }

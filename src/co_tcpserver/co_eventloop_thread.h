@@ -19,7 +19,6 @@ public:
     ~CoEventLoopThread();
     
     virtual EventLoop* StartLoop() override;
-    //virtual void StopLoop() override;
 };
 
 }

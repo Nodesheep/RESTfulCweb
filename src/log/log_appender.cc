@@ -10,7 +10,7 @@ namespace cweb {
 
 namespace log {
 
-static const size_t kMaxLogCapacity = 100;
+static const size_t kMaxLogCapacity = 200;
 
 void ConsoleAppender::Log(LogInfo *logInfo) {
     std::unique_lock<std::mutex> lock(mutex_);
@@ -27,24 +27,28 @@ FileAppender::FileAppender(LogFormatter* formatter, LogWriter* writer, const std
 }
 
 FileAppender::~FileAppender() {
-    //把剩余的全部写完
     writeLogsfile();
     ofs_.close();
 }
 
 void FileAppender::Log(LogInfo* logInfo) {
-    while(!logging_pipe_->MultiplePush(logInfo)) {
-        std::unique_lock<std::mutex> lock(mutex_);
-        cond_.wait(lock);
-    }
-    
-    writer_->Wakeup();
-    //回收队列 多读 写一个取一个
     LogInfo *loginfo = retrieving_pipe_->MultiplePop();
     if(loginfo) {
         ((util::MemoryPool*)pthread_getspecific(util::PthreadKeysSingleton::GetInstance()->TLSMemoryPool))->Deallocate(loginfo, sizeof(LogInfo));
     }
     
+    while(!logging_pipe_->MultiplePush(logInfo)) {
+        LogInfo *loginfo = retrieving_pipe_->MultiplePop();
+        if(loginfo) {
+            ((util::MemoryPool*)pthread_getspecific(util::PthreadKeysSingleton::GetInstance()->TLSMemoryPool))->Deallocate(loginfo, sizeof(LogInfo));
+        }
+        writer_->Wakeup();
+        std::unique_lock<std::mutex> lock(mutex_);
+        cond_.wait(lock);
+    }
+    //回收队列 多读 写一个取一个
+    
+    writer_->Wakeup();
 }
 
 bool FileAppender::createFilepath() {
@@ -67,7 +71,10 @@ bool FileAppender::createFilepath() {
 //单线程写文件
 void FileAppender::writeLogsfile() {
     LogInfo *loginfo = logging_pipe_->SinglePop();
-    if(!loginfo) return;
+    while(!loginfo) {
+        cond_.notify_all();
+        return;
+    }
     
     writing_ = true;
     if(createFilepath()) {
@@ -81,13 +88,15 @@ void FileAppender::writeLogsfile() {
     
     while(loginfo) {
         ofs_ << formatter_->Format(loginfo);
-        //不能放在写文件线程中回收，要放到他产生的线程中回收
-        retrieving_pipe_->SinglePush(loginfo);
+        while(!retrieving_pipe_->SinglePush(loginfo)) {
+            cond_.notify_all();
+            writer_->Sleep();
+        }
         
-        loginfo = logging_pipe_->MultiplePop();
+        loginfo = logging_pipe_->SinglePop();
         cond_.notify_all();
+        ofs_.flush();
     }
-    ofs_.flush();
     writing_ = false;
 }
 

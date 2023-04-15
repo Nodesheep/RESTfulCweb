@@ -9,7 +9,7 @@ static const int kMaxConnCount = 128;
 namespace cweb {
 namespace tcpserver {
 
-Socket* Socket::CreateNonblockFdAndBind(InetAddress* addr) {
+Socket* Socket::CreateNonblockFdAndBind(InetAddress* addr, bool nonblock) {
     int fd = -1;
     if(addr->ipv6_) {
         fd = ::socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
@@ -28,7 +28,10 @@ Socket* Socket::CreateNonblockFdAndBind(InetAddress* addr) {
     if(ret < 0) return nullptr;
     
     Socket* socket = new Socket(fd);
-    socket->SetNonBlock();
+    
+    if(nonblock) {
+        socket->SetNonBlock();
+    }
     
     return socket;
 }

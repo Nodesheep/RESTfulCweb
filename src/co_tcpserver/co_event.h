@@ -1,7 +1,7 @@
 #ifndef CWEB_COROUTINE_COEVENT_H_
 #define CWEB_COROUTINE_COEVENT_H_
 
-#include "../tcpserver/event.h"
+#include "event.h"
 
 namespace cweb {
 namespace tcpserver {
@@ -14,12 +14,10 @@ class CoEvent : public Event {
 public:
     friend CoEventLoop;
     CoEvent(CoEventLoop* loop, int fd);
-    virtual ~CoEvent() {}
+    virtual ~CoEvent();
     virtual void HandleEvent(Time receiveTime) override;
     
     int Flags() const {return flags_;}
-    void ExecuteReadCoroutine();
-    void ExecuteWriteCoroutine();
     void RemoveCoroutine(Coroutine* co);
     
 private:

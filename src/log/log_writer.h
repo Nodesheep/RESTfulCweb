@@ -24,6 +24,7 @@ public:
     void Run();
     void Stop();
     void Wakeup();
+    void Sleep();
 };
 
 }

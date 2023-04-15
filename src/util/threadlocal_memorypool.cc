@@ -1,4 +1,5 @@
 #include "threadlocal_memorypool.h"
+#include <iostream>
 
 namespace cweb {
 
@@ -82,11 +83,10 @@ void* MemoryPool::allocateInMemoryblocks (size_t bytes) {
         alloc_ptr_ += bytesneed;
         bytes_remaining_ -= bytesneed;
     }else {
-        char* block = new char[kMemoryBlockSize];
-        memoryblocks_.push_back(block);
+        alloc_ptr_ = new char[kMemoryBlockSize];
+        memoryblocks_.push_back(alloc_ptr_);
         bytes_remaining_ = kMemoryBlockSize;
-        allocptr = block;
-        alloc_ptr_ = block;
+        allocptr = alloc_ptr_;
         alloc_ptr_ += bytes;
         bytes_remaining_ -= bytes;
     }

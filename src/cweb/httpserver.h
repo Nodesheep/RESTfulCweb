@@ -6,8 +6,6 @@
 #include <string>
 #include "http_parser.h"
 #include "timer.h"
-//#include "../tcpserver/tcpconnection.h"
-//#include "../tcpserver/tcpserver.h"
 #include "bytebuffer.h"
 #include "server.h"
 #include "connection.h"
@@ -24,6 +22,7 @@ protected:
     const std::string content_type_;
 
 public:
+    virtual ~HttpRequestBody() {}
     friend class HttpRequest;
     HttpRequestBody(const std::string& type) : content_type_(type) {}
     virtual bool SetData(ByteBuffer* data) = 0;
@@ -34,6 +33,7 @@ private:
     std::unordered_map<std::string, std::string> formdatas_;
     
 public:
+    virtual ~HttpRequestFormBody() {}
     HttpRequestFormBody() : HttpRequestBody("application/x-www-form-urlencoded") {}
     virtual bool SetData(ByteBuffer* data) override;
     std::string FormData(const std::string& key);
@@ -44,6 +44,7 @@ private:
     std::string json_string_;
     
 public:
+    virtual ~HttpRequestJsonBody() {}
     HttpRequestJsonBody() : HttpRequestBody("application/json") {}
     virtual bool SetData(ByteBuffer* data) override;
 };
@@ -90,18 +91,13 @@ public:
     std::string PostForm(const std::string &key);
 };
 
-class HttpReponse {
-private:
-    //std::string filepath_ = "";
-    ByteBuffer* send_data_ = nullptr;
-    
+class HttpResponse {
 public:
-    HttpReponse();
-    ~HttpReponse();
-    void SetHeader(const std::string& key, const std::string& value);
-    void SetStatusCode(HttpStatusCode code);
-    void SetBody(StringPiece body);
-    ByteBuffer* SendData();
+    HttpResponse();
+    ~HttpResponse();
+    static void SetHeader(const std::string& key, const std::string& value, std::iostream *stream);
+    static void SetStatusCode(HttpStatusCode code, std::iostream *stream);
+    static void SetBody(StringPiece body, std::iostream *stream);
 };
 
 class HttpServer {

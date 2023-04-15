@@ -20,7 +20,8 @@ public:
         READY,
         HOLD,
         EXEC,
-        TERM
+        TERM,
+        REMOVE
     };
     
     Coroutine(std::function<void()> func, CoEventLoop* loop = nullptr);

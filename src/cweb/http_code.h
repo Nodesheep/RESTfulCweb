@@ -13,13 +13,6 @@ enum HttpStatusCode {
     StatusNotFound = 404,
 };
 
-//static std::unordered_map<HttpStatusCode, std::string> HttpStatusCodeString = {
-//    {StatusOK ,"OK"},
-//    {StatusMovedPermanently, "Moved Permanently"},
-//    {StatusNotFound, "Bad Request"},
-//    {StatusNotFound, "Not Found"}
-//};
-
 }
 
 #endif

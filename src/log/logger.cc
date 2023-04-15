@@ -19,6 +19,7 @@ Logger::~Logger() {
 
 void Logger::Log(LogLevel level, const std::string &module, const std::string &tag, const char *format, ...) {
     LogInfo* info = (LogInfo*)((util::MemoryPool*)pthread_getspecific(util::PthreadKeysSingleton::GetInstance()->TLSMemoryPool))->Allocate(sizeof(LogInfo));
+
     struct timeval tv;
     gettimeofday(&tv, NULL);
     int64_t seconds = tv.tv_sec;
@@ -70,10 +71,10 @@ LoggerManager::~LoggerManager() {
 Logger* LoggerManager::GetLogger(const std::string& module) {
     Logger* logger = loggers_[module];
     if(!logger) {
-        std::unique_lock<std::mutex> lock(mutex_);
         logger = new Logger();
         logger->AddAppender(new ConsoleAppender(formatter_));
         logger->AddAppender(new FileAppender(formatter_, writer_, module));
+        std::unique_lock<std::mutex> lock(mutex_);
         loggers_[module] = logger;
     }
     return logger;

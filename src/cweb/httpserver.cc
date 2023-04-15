@@ -1,12 +1,17 @@
 #include "httpserver.h"
-#include "eventloop.h"
-#include "tcpserver.h"
 #include "tcpconnection.h"
-//#include "co_tcpserver.h"
+#ifdef COROUTINE
+#include "co_tcpserver.h"
+#else
+#include "tcpserver.h"
+#endif
 #include "logger.h"
 #include "http_parser.h"
 
-//using namespace cweb::tcpserver::coroutine;
+#ifdef COROUTINE
+using namespace cweb::tcpserver::coroutine;
+#endif
+
 using namespace cweb::log;
 
 namespace cweb {
@@ -60,6 +65,7 @@ HttpRequest::~HttpRequest() {
     free(parser_);
     free(parser_settings_);
     delete binary_body_;
+    delete body_;
 }
 
 int HttpRequest::Parse(const void *data, size_t len) {
@@ -121,7 +127,7 @@ int HttpRequest::handleHeaderValue(http_parser* parser, const char *at, size_t l
 
 int HttpRequest::handleBody(http_parser* parser, const char *at, size_t length) {
     HttpRequest* req = (HttpRequest*)(parser->data);
-    //如果是大文件上传请求应当写入文件 暂时不考虑
+    //TODO 文件上传场景
     req->binary_body_->Append(at, length);
     return 0;
 }
@@ -137,40 +143,48 @@ int HttpRequest::handleMessageComplete(http_parser* parser) {
 }
 
 std::string HttpRequest::PostForm(const std::string &key) {
-    if(headers_["content-type"] == "application/x-www-form-urlencoded") return "";
+    if(headers_["content-type"] != "application/x-www-form-urlencoded") return "";
     return ((HttpRequestFormBody*)body_)->FormData(key);
 }
 
-HttpReponse::HttpReponse() : send_data_(new ByteBuffer()) {}
-HttpReponse::~HttpReponse() {delete send_data_;}
+HttpResponse::HttpResponse() {}
+HttpResponse::~HttpResponse() {}
 
-void HttpReponse::SetStatusCode(HttpStatusCode code) {
-    //HttpStatusCodeString[code]
-    send_data_->Append("HTTP/1.1 " + std::to_string(code) + " " + "OK" + "\r\n");
+void HttpResponse::SetStatusCode(HttpStatusCode code, std::iostream *stream) {
+    static std::unordered_map<int, std::string> http_status_code = {
+        {200 ,"OK"},
+        {301, "Moved Permanently"},
+        {400, "Bad Request"},
+        {404, "Not Found"}
+    };
+    
+    *stream << "HTTP/1.1 " + std::to_string(code) + " " + http_status_code[code] + "\r\n";
 }
 
-void HttpReponse::SetHeader(const std::string &key, const std::string &value) {
-    send_data_->Append(key + ": " + value + "\r\n");
+void HttpResponse::SetHeader(const std::string &key, const std::string &value, std::iostream *stream) {
+    *stream << key + ": " + value + "\r\n";
 }
 
-void HttpReponse::SetBody(StringPiece body) {
-    send_data_->Append("\r\n");
-    send_data_->Append(body);
-}
-
-ByteBuffer* HttpReponse::SendData() {
-    return send_data_;
+void HttpResponse::SetBody(StringPiece body, std::iostream *stream) {
+    *stream << "\r\n";
+    *stream << body.Data();
 }
 
 HttpServer::HttpServer(EventLoop* loop, uint16_t port, bool loopbackonly, bool ipv6) {
+#ifdef COROUTINE
+    tcpserver_ = new CoTcpServer((CoEventLoop*)loop, port, loopbackonly, ipv6);
+#else
     tcpserver_ = new TcpServer(loop, port, loopbackonly, ipv6);
-    //tcpserver_ = new CoTcpServer((CoEventLoop*)loop, port, loopbackonly, ipv6);
+#endif
     tcpserver_->SetMessageCallback(std::bind(&HttpServer::handleMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 HttpServer::HttpServer(EventLoop* loop, const std::string& ip, uint16_t port, bool ipv6) {
+#ifdef COROUTINE
+    tcpserver_ = new CoTcpServer((CoEventLoop*)loop, ip, port, ipv6);
+#else
     tcpserver_ = new TcpServer(loop, ip, port, ipv6);
-    //tcpserver_ = new CoTcpServer((CoEventLoop*)loop, ip, port, ipv6);
+#endif
     tcpserver_->SetMessageCallback(std::bind(&HttpServer::handleMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
@@ -204,11 +218,10 @@ void HttpServer::handleMessage(Connection* conn, ByteBuffer* buf, Time time) {
             if(request_callback_) {
                 request_callback_(conn, req);
             }
-            delete req;
         //出错
         }else if(res < 0) {
             LOG(LOGLEVEL_WARN, CWEB_MODULE, "httpserver", "数据解析失败");
-            conn->Send("HTTP/1.1 400 Bad Request\r\n\r\n");
+            conn->Send(new std::stringstream("HTTP/1.1 400 Bad Request\r\n\r\n"));
             delete req;
         //解析中
         }else {

@@ -13,7 +13,7 @@ namespace cweb {
 
 namespace log {
 
-class LogInfo;
+struct LogInfo;
 class LogfilePipe;
 class LogFormatter;
 

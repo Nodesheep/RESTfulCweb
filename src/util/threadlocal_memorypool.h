@@ -7,7 +7,7 @@
 
 #include "noncopyable.h"
 
-//小内存管理，小于1k
+//小内存管理，小于4k
 namespace cweb {
 
 namespace util {

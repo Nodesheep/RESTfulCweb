@@ -9,6 +9,7 @@
 #include "bytebuffer.h"
 #include "http_code.h"
 #include "json.h"
+#include "httpserver.h"
 
 using namespace cweb::tcpserver;
 using namespace cweb::util;
@@ -27,6 +28,7 @@ private:
 public:
     friend class Router;
     Context(Connection* conn, HttpRequest* req) : connection_(conn), request_(req) {}
+    ~Context() {delete request_;}
     
     void Next() {
         ++index_;
@@ -48,7 +50,7 @@ public:
     void STRING(HttpStatusCode code, StringPiece data);
     void JSON(HttpStatusCode code, Json::Value value);
     //void HTML();
-    //void FILE();
+    void FILE(HttpStatusCode code, const std::string& filepath);
 };
 
 }

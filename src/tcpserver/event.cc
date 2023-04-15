@@ -40,6 +40,12 @@ void Event::HandleEvent(Time receiveTime) {
     }
 }
 
+void Event::HandleTimeout() {
+    if(timeout_callback_) {
+        timeout_callback_();
+    }
+}
+
 void Event::Remove() {
     loop_->RemoveEvent(this);
 }

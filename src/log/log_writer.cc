@@ -21,6 +21,11 @@ void LogWriter::Wakeup() {
     cond_.notify_all();
 }
 
+void LogWriter::Sleep() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    cond_.wait(lock);
+}
+
 void LogWriter::loop() {
     while(running_) {
         std::unique_lock<std::mutex> lock(mutex_);

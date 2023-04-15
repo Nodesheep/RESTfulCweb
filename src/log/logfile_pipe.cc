@@ -16,13 +16,20 @@ bool LogfilePipe::SinglePush(LogInfo *log) {
 
 LogInfo* LogfilePipe::MultiplePop() {
     LogInfo* info = nullptr;
-    logs_.MultiplePop(info);
-    return info;
+    if(logs_.MultiplePop(info)) {
+        return info;
+    }else {
+        return nullptr;
+    }
 }
 
 LogInfo* LogfilePipe::SinglePop() {
     LogInfo* info = nullptr;
-    logs_.SinglePop(info);
+    if(logs_.SinglePop(info)) {
+        return info;
+    }else {
+        return nullptr;
+    }
     return info;
 }
                          

@@ -36,9 +36,7 @@ TcpServer::~TcpServer() {
 void TcpServer::init() {
     //可以用指针
     accept_socket_ = Socket::CreateNonblockFdAndBind(addr_);
-    if(!accept_socket_) {
-        //LOG(LOGLEVEL_ERROR, CWEB_MODULE, "tcpserver", "绑定套接字失败");
-    }
+    if(!accept_socket_) {}
     accept_event_ =  new Event(accept_loop_, accept_socket_->Fd());
     accept_event_->SetReadCallback(std::bind(&TcpServer::handleAccept, this));
 }
@@ -49,9 +47,7 @@ void TcpServer::Start(int threadcnt) {
     running_ = true;
     scheduler_ = new Scheduler(accept_loop_, threadcnt);
     scheduler_->Start();
-    if(accept_socket_->Listen() < 0) {
-        //LOG(LOGLEVEL_ERROR, CWEB_MODULE, "tcpserver", "监听套接字失败");
-    }
+    if(accept_socket_->Listen() < 0) {}
     accept_event_->EnableReading();
     accept_loop_->Run();
 }
@@ -69,7 +65,10 @@ void TcpServer::handleAccept() {
     
     Socket* socket = nullptr;
     if(connfd > 0) socket = new Socket(connfd);
-    else return;
+    else {
+        LOG(LOGLEVEL_WARN, CWEB_MODULE, "tcpserver", "创建连接失败");
+        return;
+    }
     
     socket->SetNonBlock();
     EventLoop* loop = scheduler_->GetNextLoop();

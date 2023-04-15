@@ -23,15 +23,14 @@ Coroutine::~Coroutine() {
 void Coroutine::SwapIn() {
     state_ = EXEC;
     CoroutineContext::ContextSwap(((CoEventLoop*)pthread_getspecific(util::PthreadKeysSingleton::GetInstance()->TLSEventLoop))->GetMainCoroutine()->context_, context_);
-    //CoroutineContext::ContextSwap(CoEventLoop::GetMainCoroutine()->context_, context_);
 }
 
 void Coroutine::SwapOut() {
     CoroutineContext::ContextSwap(context_, ((CoEventLoop*)pthread_getspecific(util::PthreadKeysSingleton::GetInstance()->TLSEventLoop))->GetMainCoroutine()->context_);
-   // CoroutineContext::ContextSwap(context_, CoEventLoop::GetMainCoroutine()->context_);
 }
 
 void Coroutine::SwapTo(Coroutine *co) {
+    co->SetState(EXEC);
     CoroutineContext::ContextSwap(context_, co->context_);
 }
 
@@ -45,8 +44,7 @@ void Coroutine::SetState(enum State state) {
 void Coroutine::run() {
     if(func_) func_();
     state_ = TERM;
-    //SwapOut(pthread_getspecific(<#pthread_key_t#>));
-    CoroutineContext::ContextSwap(context_, ((CoEventLoop*)pthread_getspecific(util::PthreadKeysSingleton::GetInstance()->TLSEventLoop))->GetMainCoroutine()->context_);
+    SwapOut();
 }
 
 }

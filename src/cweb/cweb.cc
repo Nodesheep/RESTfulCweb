@@ -1,14 +1,23 @@
 #include "cweb.h"
 #include "context.h"
 #include "httpserver.h"
+#ifdef COROUTINE
+#include "co_eventloop.h"
+#else
 #include "eventloop.h"
-//#include "co_eventloop.h"
+#endif
 
-//using namespace cweb::tcpserver::coroutine;
+#ifdef COROUTINE
+using namespace cweb::tcpserver::coroutine;
+#endif
+
 namespace cweb {
 
+#ifdef COROUTINE
+CoEventLoop mainloop;
+#else
 EventLoop mainloop;
-//CoEventLoop mainloop;
+#endif
 
 Cweb::Cweb(uint16_t port, bool loopbackonly, bool ipv6) {
     router_ = new Router();

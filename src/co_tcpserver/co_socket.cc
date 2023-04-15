@@ -6,7 +6,7 @@ namespace cweb {
 namespace tcpserver {
 namespace coroutine {
 
-CoSocket* CoSocket::CreateNonblockFdAndBind(InetAddress* addr) {
+CoSocket* CoSocket::CreateNonblockFdAndBind(InetAddress* addr, bool nonblock) {
     int fd = -1;
     if(addr->IsIPv6()) {
         fd = ::socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
@@ -22,8 +22,13 @@ CoSocket* CoSocket::CreateNonblockFdAndBind(InetAddress* addr) {
         ret = ::bind(fd, (struct sockaddr*)addr->Addrv4(), static_cast<socklen_t>(sizeof(struct sockaddr_in)));
     }
     
+    if(ret < 0) return nullptr;
+    
     CoSocket* socket = new CoSocket(fd);
-    //socket->SetNonBlock();
+    
+    if(nonblock) {
+        socket->SetNonBlock();
+    }
     
     return socket;
 }
@@ -33,7 +38,6 @@ int CoSocket::Accept(InetAddress *peeraddr) {
     memset(&addr, 0, sizeof(addr));
     socklen_t len = static_cast<socklen_t>(sizeof(addr));
     int connfd = hook_accept(fd_, &addr, &len);
-    //::accept(<#int#>, <#struct sockaddr *#>, <#socklen_t *#>)
     
     if(connfd  < 0) return -1;
     

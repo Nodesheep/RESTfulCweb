@@ -56,7 +56,6 @@ protected:
 private:
     std::vector<Functor> tasks_;
     std::vector<Timer*> timeout_timers_;
-   // std::vector<Timer*> timers_;
     
     int wakeup_fd_[2];
     Event* wakeup_event_;

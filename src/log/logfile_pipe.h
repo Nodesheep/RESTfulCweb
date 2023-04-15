@@ -11,7 +11,6 @@ namespace cweb {
 
 namespace log {
 
-//class LockfreeQueue;
 class LogfilePipe {
 private:
     LockfreeQueue<LogInfo *> logs_;
@@ -19,7 +18,6 @@ private:
 public:
     LogfilePipe(int capacity);
     
-    //验证数组中指针释放后会不会被销毁
     bool MultiplePush(LogInfo *log);
     bool SinglePush(LogInfo *log);
     

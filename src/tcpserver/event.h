@@ -19,6 +19,7 @@ class Event {
 public:
     friend KqueuePoller;
     friend class PollPoller;
+    friend class EPollPoller;
     friend EventLoop;
     Event(EventLoop* loop, int fd) : loop_(loop), fd_(fd) {}
     
@@ -38,15 +39,17 @@ public:
     bool Writable() const {return events_ & WRITE_EVENT;}
     
     virtual void HandleEvent(Time receiveTime);
+    void HandleTimeout();
     
     void Remove();
     
     void SetReadCallback(ReadEventCallback cb) { read_callback_ = std::move(cb); }
     void SetWriteCallback(EventCallback cb) { write_callback_ = std::move(cb); }
-    void SetCloseCallback(EventCallback cb) { finishCallback_ = std::move(cb); }
-    void SetErrorCallback(EventCallback cb) { errorCallback_ = std::move(cb); }
+    void SetTimeoutCallback(EventCallback cb) { timeout_callback_ = std::move(cb); }
+    void SetErrorCallback(EventCallback cb) { error_callback_ = std::move(cb); }
     
     int Fd() const {return fd_;}
+    
 protected:
     int fd_ = 0;
     int events_ = 0;
@@ -55,8 +58,8 @@ protected:
     EventLoop* loop_ = nullptr;
     ReadEventCallback read_callback_;
     EventCallback write_callback_;
-    EventCallback finishCallback_;
-    EventCallback errorCallback_;
+    EventCallback timeout_callback_;
+    EventCallback error_callback_;
     
     void update();
 };

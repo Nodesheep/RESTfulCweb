@@ -125,7 +125,15 @@ TimerWheelManager::TimerWheelManager(uint64_t tickms, int wheelsize, int layers)
 }
 
 TimerWheelManager::~TimerWheelManager() {
-    
+    for(int i = 0; i < layers_; ++i) {
+        if(timers_cnts_[i] > 0) {
+            for(int j = 0; j < timers_wheels_[layers_].size(); ++j) {
+                if(timers_wheels_[layers_][j].Size() > 0) {
+                    RemoveTimer(timers_wheels_[layers_][j].Pop());
+                }
+            }
+        }
+    }
 }
 
 void TimerWheelManager::AddTimer(Timer *timer) {
@@ -184,7 +192,6 @@ bool TimerWheelManager::PopAllTimeoutTimer(std::vector<Timer *> &timeout_timers)
             util::LinkedList<Timer>& timers = timers_wheels_[i][j % wheel_size_];
             size_t size = timers.Size();
             while(size) {
-               // std::cout << "请求链路：移除定时器：" << std::endl;
                 Timer* timer = timers.Pop();
                 timer->poped_ = true;
                 --size;
@@ -203,7 +210,6 @@ bool TimerWheelManager::PopAllTimeoutTimer(std::vector<Timer *> &timeout_timers)
         util::LinkedList<Timer>& timers = timers_wheels_[0][i % wheel_size_];
         size_t size = timers.Size();
         while(size) {
-            //std::cout << "请求链路：移除定时器：" << std::endl;
             Timer* timer = timers.Pop();
             timer->poped_ = true;
             --size;

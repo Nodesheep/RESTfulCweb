@@ -30,8 +30,6 @@ private:
         }else {
             tail_->next = begin;
             begin->pre = tail_;
-            //end->next = head_;
-            //head_->pre = end;
             end->next = nullptr;
             tail_ = end;
             size_ += size;
@@ -60,8 +58,8 @@ public:
         
         if(size_ == 0) {
             head_ = tail_ = val;
-            head_->next = nullptr;
-            tail_->pre = nullptr;
+            tail_->next = nullptr;
+            head_->pre = nullptr;
         }else {
             tail_->next = val;
             val->pre = tail_;
@@ -91,6 +89,7 @@ public:
     
     void Erase(T* val) {
         assert(val != nullptr);
+        if(size_ == 0) return;
         if(val->pre == nullptr) {
             head_ = (T*)head_->next;
             if(head_) head_->pre = nullptr;

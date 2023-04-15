@@ -11,7 +11,6 @@
 #include "log_info.h"
 #include "log_formatter.h"
 #include "log_writer.h"
-//#include "cweb_config.h"
 #include "singleton.h"
 
 namespace cweb {
@@ -26,7 +25,6 @@ public:
     void Log(LogLevel level, const std::string& module, const std::string& tag, const char *format, ...);
 
     void AddAppender(LogAppender* appender);
-    //void DelAppender(LogAppender* appender);
 
 private:
     const std::string module_;
@@ -43,7 +41,7 @@ public:
     //formatter共享 loop共享
     LoggerManager();
     ~LoggerManager();
-    Logger* GetLogger(const std::string& module); //创建
+    Logger* GetLogger(const std::string& module);
     void log();
 
 private:

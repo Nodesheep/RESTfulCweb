@@ -48,14 +48,10 @@ public:
     
     void NotifyCoroutineReady(Coroutine* co);
     Coroutine* GetCurrentCoroutine();
-    //void AddCoroutine(Coroutine* co);
     Coroutine* GetMainCoroutine();
 
 };
 
-//static __thread int TLSCoEventLoop = 0;
-//static __thread CoEventLoop* TLSCoEventLoop = NULL;
-//static pthread_key_t TLSCoEventLoopKey;
 }
 }
 }

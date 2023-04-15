@@ -1,15 +1,13 @@
 #include "eventloop.h"
 #include "event.h"
 #include "timer.h"
-
-//#ifdef UNIX
+#ifdef KQUEUE
 #include "kqueue_poller.h"
-//#elsif LINUX
-//#include "epoll_poller.h"
-//#else
-//#include "poll_poller.h"
-//#endif
+#elif EPOLL
+#include "epoll_poller.h"
+#else
 #include "poll_poller.h"
+#endif
 #include "pthread_keys.h"
 
 #include <unistd.h>
@@ -19,19 +17,23 @@ namespace tcpserver {
 
 EventLoop::EventLoop()
 :tid_(pthread_self()) {
-//#ifdef UNIX
-   // poller_ = new KqueuePoller(this);
-//#elsif LINUX
+#ifdef KQUEUE
+    poller_ = new KqueuePoller(this);
+#elif EPOLL
+    //poller_ = new PollPoller(this);
+#else
     poller_ = new PollPoller(this);
-//#else
-   // poller_ = new PollPoller(this);
-//#endif
+#endif
     timermanager_ = new TimerWheelManager();
     memorypool_ = new util::MemoryPool();
     createWakeupfd();
 }
 
-EventLoop::~EventLoop() {}
+EventLoop::~EventLoop() {
+    delete poller_;
+    delete memorypool_;
+    delete timermanager_;
+}
 
 void EventLoop::Run() {
     pthread_setspecific(util::PthreadKeysSingleton::GetInstance()->TLSMemoryPool, memorypool_);
@@ -119,7 +121,6 @@ void EventLoop::handleTasks() {
 }
 
 void EventLoop::handleTimeoutTimers() {
-    //timermanager_->ExecuteAllTimeoutTimer();
     std::vector<Timer*> timeouts;
     if(timermanager_->PopAllTimeoutTimer(timeouts)) {
         for(Timer* timeout : timeouts) {

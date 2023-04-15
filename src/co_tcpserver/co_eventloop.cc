@@ -2,13 +2,7 @@
 #include "coroutine.h"
 #include "co_event.h"
 #include "timer.h"
-#ifdef UNIX
-#include "kqueue_poller.h"
-#elsif LINUX
-#include "epoll_poller.h"
-#else
-#include "poll_poller.h"
-#endif
+#include "poller.h"
 #include "pthread_keys.h"
 
 namespace cweb {
@@ -84,12 +78,20 @@ void CoEventLoop::UpdateEvent(Event *event) {
 }
 
 void CoEventLoop::RemoveEvent(Event *event) {
-    events_.erase(((CoEvent*)event)->fd_);
+    CoEvent* coevent = (CoEvent*)event;
+    events_.erase(coevent->fd_);
     poller_->RemoveEvent(event);
+    
+    if(coevent->read_coroutine_) {
+        coevent->read_coroutine_->SetState(Coroutine::REMOVE);
+    }
+    
+    if(coevent->write_coroutine_) {
+        coevent->write_coroutine_->SetState(Coroutine::REMOVE);
+    }
 }
 
 CoEvent* CoEventLoop::GetEvent(int fd) {
-    //return (CoEvent*)events_[fd];
     if(events_.find(fd) == events_.end()) {
         return nullptr;
     }
@@ -109,21 +111,27 @@ void CoEventLoop::NotifyCoroutineReady(Coroutine *co) {
 //主协程
 void CoEventLoop::loop() {
     while(running_) {
-        //epoll
         active_events_.clear();
-        Time now = poller_->Poll(-1, active_events_);
+        int timeout = timermanager_->NextTimeoutInterval();
+        Time now = poller_->Poll(timeout, active_events_);
   
         handleActiveEvents(now);
         handleTimeoutTimers();
-            
+        
         running_coroutine_ = running_coroutines_.Front();
+
         if(!running_coroutine_) {
             moveReadyCoroutines();
             running_coroutine_ = running_coroutines_.Front();
         }
         
         while(running_coroutine_ && running_) {
-            //running_coroutine_->SwapIn();
+            if(running_coroutine_->State() == Coroutine::REMOVE) {
+                running_coroutines_.Erase(running_coroutine_);
+                delete running_coroutine_;
+                running_coroutine_ = running_coroutines_.Front();
+                continue;
+            }
             running_coroutine_->SetLoop(this);
             main_coroutine_->SwapTo(running_coroutine_);
             switch (running_coroutine_->State()) {
@@ -138,8 +146,6 @@ void CoEventLoop::loop() {
                 }
                     break;
                 case Coroutine::State::HOLD: {
-                    //移动到阻塞队列
-                    //可执行队列、阻塞队列、不可抢占等待队列、可抢占等待队列
                     running_coroutines_.Erase(running_coroutine_);
                     hold_coroutines_.Push(running_coroutine_);
                     next_coroutine_ = running_coroutines_.Next(running_coroutine_);
@@ -179,9 +185,15 @@ void CoEventLoop::handleActiveEvents(Time time) {
 }
 
 void CoEventLoop::handleTimeoutTimers() {
-    std::vector<Functor> timeouts;
-    if(timermanager_->PopAllTimeoutFunctor(timeouts)) {
-        AddTasks(timeouts);
+    //timermanager_->ExecuteAllTimeoutTimer();
+    std::vector<Timer*> timeouts;
+    if(timermanager_->PopAllTimeoutTimer(timeouts)) {
+        for(Timer* timeout : timeouts) {
+            AddTask([timeout, this](){
+                timeout->Execute();;
+                RemoveTimer(timeout);
+            });
+        }
     }
 }
 
