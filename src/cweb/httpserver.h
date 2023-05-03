@@ -95,9 +95,9 @@ class HttpResponse {
 public:
     HttpResponse();
     ~HttpResponse();
-    static void SetHeader(const std::string& key, const std::string& value, std::iostream *stream);
-    static void SetStatusCode(HttpStatusCode code, std::iostream *stream);
-    static void SetBody(StringPiece body, std::iostream *stream);
+    static void SetHeader(const std::string& key, const std::string& value, std::string& stream);
+    static void SetStatusCode(HttpStatusCode code, std::string& stream);
+    static void SetBody(StringPiece body, std::string& stream);
 };
 
 class HttpServer {

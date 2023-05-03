@@ -15,9 +15,10 @@ private:
     size_t length_;
 
 public:
+    StringPiece() : ptr_(nullptr), length_(0) {}
     StringPiece(const char* str)
         : ptr_(str), length_(static_cast<size_t>(strlen(ptr_))) {}
-    
+    StringPiece(const char* bytes, size_t len) : ptr_(bytes), length_(len) {}
     StringPiece(const std::string& str)
         : ptr_(str.data()), length_(static_cast<size_t>(str.size())) {}
     

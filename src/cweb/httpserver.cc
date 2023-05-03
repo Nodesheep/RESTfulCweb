@@ -127,7 +127,7 @@ int HttpRequest::handleHeaderValue(http_parser* parser, const char *at, size_t l
 
 int HttpRequest::handleBody(http_parser* parser, const char *at, size_t length) {
     HttpRequest* req = (HttpRequest*)(parser->data);
-    //TODO 文件上传场景
+    //TODO 文件上传场景 缓存到磁盘中 multipart场景
     req->binary_body_->Append(at, length);
     return 0;
 }
@@ -150,7 +150,7 @@ std::string HttpRequest::PostForm(const std::string &key) {
 HttpResponse::HttpResponse() {}
 HttpResponse::~HttpResponse() {}
 
-void HttpResponse::SetStatusCode(HttpStatusCode code, std::iostream *stream) {
+void HttpResponse::SetStatusCode(HttpStatusCode code, std::string& stream) {
     static std::unordered_map<int, std::string> http_status_code = {
         {200 ,"OK"},
         {301, "Moved Permanently"},
@@ -158,16 +158,16 @@ void HttpResponse::SetStatusCode(HttpStatusCode code, std::iostream *stream) {
         {404, "Not Found"}
     };
     
-    *stream << "HTTP/1.1 " + std::to_string(code) + " " + http_status_code[code] + "\r\n";
+    stream += "HTTP/1.1 " + std::to_string(code) + " " + http_status_code[code] + "\r\n";
 }
 
-void HttpResponse::SetHeader(const std::string &key, const std::string &value, std::iostream *stream) {
-    *stream << key + ": " + value + "\r\n";
+void HttpResponse::SetHeader(const std::string &key, const std::string &value, std::string& stream) {
+    stream += key + ": " + value + "\r\n";
 }
 
-void HttpResponse::SetBody(StringPiece body, std::iostream *stream) {
-    *stream << "\r\n";
-    *stream << body.Data();
+void HttpResponse::SetBody(StringPiece body, std::string& stream) {
+    stream += "\r\n";
+    stream += body.Data();
 }
 
 HttpServer::HttpServer(EventLoop* loop, uint16_t port, bool loopbackonly, bool ipv6) {
@@ -221,7 +221,10 @@ void HttpServer::handleMessage(Connection* conn, ByteBuffer* buf, Time time) {
         //出错
         }else if(res < 0) {
             LOG(LOGLEVEL_WARN, CWEB_MODULE, "httpserver", "数据解析失败");
-            conn->Send(new std::stringstream("HTTP/1.1 400 Bad Request\r\n\r\n"));
+            util::ByteData* bdata = new util::ByteData();
+            std::string response("HTTP/1.1 400 Bad Request\r\n\r\n");
+            bdata->AddDataZeroCopy(response);
+            conn->Send(bdata);
             delete req;
         //解析中
         }else {

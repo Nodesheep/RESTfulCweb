@@ -23,9 +23,7 @@ protected:
     void handleWrite();
     void handleClose();
     void handleTimeout();
-    void sendInLoop(const void* data, size_t len);
-    void sendBufferInLoop(util::ByteBuffer* buffer);
-    void sendStreamInLoop(std::iostream* stream);
+    void sendInLoop(util::ByteData* data);
     void connectEstablished();
     
     EventLoop* ownerloop_ = nullptr;
@@ -42,9 +40,14 @@ public:
     bool KeepAlive() const {return keep_alive_;}
     EventLoop* Ownerloop() const {return ownerloop_;}
     
+    /*
     virtual void Send(util::ByteBuffer* buf) override;
     virtual void Send(const util::StringPiece& data) override;
     virtual void Send(std::iostream* stream) override;
+    virtual void Send(const std::vector<std::iostream*>& streams) override;
+     */
+     
+    virtual void Send(util::ByteData* data) override;
     
 };
 

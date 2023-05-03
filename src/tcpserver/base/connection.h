@@ -2,6 +2,7 @@
 #define CWEB_TCP_CONNECTION_H_
 
 #include "bytebuffer.h"
+#include "bytedata.h"
 #include "inetaddress.h"
 #include "timer.h"
 #include <unordered_map>
@@ -32,8 +33,7 @@ protected:
     CloseCallback close_callback_;
     MessageCallback message_callback_;
     std::vector<CloseCallback> close_handlers_;
-    std::queue<std::iostream*> stream_queue_;
-    std::iostream* current_stream_ = nullptr;
+    std::queue<util::ByteData*> send_datas_;
     
     void handleRead(Time time);
     void handleWrite();
@@ -56,9 +56,14 @@ public:
     void SetCloseCallback(CloseCallback cb) {close_callback_ = std::move(cb);}
     //void SetRemoveRequestCallback(CloseCallback cb) {remove_request_callback_ = std::move(cb);}
     void AddCloseHandlers(CloseCallback handler) {close_handlers_.push_back(std::move(handler));}
+    /* //废弃
     virtual void Send(util::ByteBuffer* buf) = 0;
     virtual void Send(const util::StringPiece& data) = 0;
     virtual void Send(std::iostream* stream) = 0;
+    virtual void Send(const std::vector<std::iostream*>& streams) = 0;
+     */
+     
+    virtual void Send(util::ByteData* data) = 0;
 };
 
 }

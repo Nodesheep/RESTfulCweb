@@ -8,13 +8,33 @@
 #include "connection.h"
 #include "bytebuffer.h"
 #include "http_code.h"
-#include "json.h"
 #include "httpserver.h"
 
 using namespace cweb::tcpserver;
 using namespace cweb::util;
 
 namespace cweb {
+
+//TODO 临时设计 后续优化
+class MultipartPart {
+private:
+    std::string headers_;
+    const char* data_ = nullptr;
+    int fd_ = -1;
+    size_t size_ = 0;
+
+public:
+    friend class Context;
+    void SetHeader(const std::string& key, const std::string& value) {
+        headers_ += key + ": " + value + "\r\n";
+    }
+    
+    void SetData(const StringPiece& data);
+    void SetData(const void* data, size_t size);
+    
+    void SetFile(const std::string& filepath);
+    void SetFile(int fd, size_t size);
+};
 
 class HttpRequest;
 class Context {
@@ -24,6 +44,8 @@ private:
     HttpRequest* request_;
     Connection* connection_;
     std::unordered_map<std::string, std::string> params_;
+    
+    std::string generateBoundary(size_t len);
     
 public:
     friend class Router;
@@ -46,11 +68,16 @@ public:
     std::string Query(const std::string& key) const;
     std::string Param(const std::string& key);
     std::string PostForm(const std::string& key) const;
+    //TODO
+    //FILE FormFile(const std::string& filename);
     
-    void STRING(HttpStatusCode code, StringPiece data);
-    void JSON(HttpStatusCode code, Json::Value value);
-    //void HTML();
-    void FILE(HttpStatusCode code, const std::string& filepath);
+    void STRING(HttpStatusCode code, const StringPiece& data);
+    void JSON(HttpStatusCode code, const StringPiece& data);
+    void FILE(HttpStatusCode code, const std::string& filepath, std::string filename = "");
+    
+    void MULTIPART(HttpStatusCode code, std::vector<MultipartPart*> parts);
+    
+    void SaveUploadedFile(File file, const std::string& path);
 };
 
 }

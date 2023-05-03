@@ -15,48 +15,9 @@ CoTcpConnection::CoTcpConnection(CoEventLoop* loop, CoSocket* socket, InetAddres
 
 CoTcpConnection::~CoTcpConnection() {}
 
-void CoTcpConnection::Send(std::iostream *stream) {
-    if(ownerloop_->isInLoopThread()) {
-        sendStreamInLoop(stream);
-    }else {
-        ownerloop_->AddTask(std::bind(&CoTcpConnection::sendStreamInLoop, this, stream));
-    }
-}
-
-void CoTcpConnection::Send(util::ByteBuffer* buf) {
-    //TODO 此方法暂时废弃
-    if(ownerloop_->isInLoopThread()) {
-        sendBufferInLoop(buf);
-    }else {
-        ownerloop_->AddTask(std::bind(&CoTcpConnection::sendBufferInLoop, this, buf));
-    }
-}
-
-void CoTcpConnection::Send(const util::StringPiece& data) {
-    //TODO 此方法暂时废弃
-    if(ownerloop_->isInLoopThread()) {
-        sendInLoop(data.Data(), data.Size());
-    }else {
-        ownerloop_->AddTask(std::bind(&CoTcpConnection::sendInLoop, this, data.Data(), data.Size()));
-    }
-}
-
-void CoTcpConnection::sendBufferInLoop(util::ByteBuffer *buffer) {
-    sendInLoop(buffer->Peek(), buffer->ReadableBytes());
-    buffer->ReadAll();
-}
-
-void CoTcpConnection::sendStreamInLoop(std::iostream *stream) {
-    stream_queue_.push(stream);
+void CoTcpConnection::Send(util::ByteData *data) {
+    send_datas_.push(data);
     if(!event_->Writable()) event_->EnableWriting();
-}
-
-void CoTcpConnection::sendInLoop(const void *data, size_t len) {
-    //TODO 此方法暂时废弃
-    outputbuffer_->Append((const char*)data, len);
-    if(!event_->Writable()) {
-        event_->EnableWriting();
-    }
 }
 
 void CoTcpConnection::handleRead(Time time) {
@@ -80,37 +41,15 @@ void CoTcpConnection::handleRead(Time time) {
 
 void CoTcpConnection::handleWrite() {
     while(true) {
-        //不允许sendstream与另两种send方法混用
-        if(!current_stream_ && stream_queue_.size() == 0) {
-            size_t n = socket_->Write((void*)outputbuffer_->Peek(), outputbuffer_->ReadableBytes());
-            if(n > 0) {
-                outputbuffer_->ReadBytes(n);
-                if(outputbuffer_->ReadableBytes() == 0) {
-                    event_->DisableWriting();
-                    return;
-                }
-            }
-        }else {
-            if(!current_stream_) {
-                current_stream_ = stream_queue_.front();
-            }
-            
-            if(current_stream_) {
-                current_stream_->read((char*)outputbuffer_->Back(), outputbuffer_->WritableBytes());
-                int got = (int)current_stream_->gcount();
-                outputbuffer_->WriteBytes(got);
-                if(current_stream_->peek() == EOF) {
-                    stream_queue_.pop();
-                    delete current_stream_;
-                    current_stream_ = nullptr;
-                }
-                size_t write_size = socket_->Write((void*)outputbuffer_->Peek(), outputbuffer_->ReadableBytes());
-                outputbuffer_->ReadBytes(write_size);
-                if(outputbuffer_->ReadableBytes() == 0 && stream_queue_.size() == 0) {
-                    event_->DisableWriting();
-                    return;
-                }
-            }
+        util::ByteData* data = send_datas_.front();
+        data->Writev(socket_->Fd());
+        if(!data->Remain()) {
+            send_datas_.pop();
+            delete data;
+        }
+        
+        if(send_datas_.size() == 0) {
+            event_->DisableWriting();
         }
     }
 }

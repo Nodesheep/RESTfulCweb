@@ -20,7 +20,7 @@ EventLoop::EventLoop()
 #ifdef KQUEUE
     poller_ = new KqueuePoller(this);
 #elif EPOLL
-    //poller_ = new PollPoller(this);
+    poller_ = new EPollPoller(this);
 #else
     poller_ = new PollPoller(this);
 #endif
