@@ -39,6 +39,7 @@ int main() {
         hobby["else"] = "sing";
         
         root["hobby"] = hobby;
+        
         std::stringstream body;
         Json::StreamWriterBuilder writerBuilder;
         writerBuilder["emitUTF8"] = true;
@@ -47,10 +48,12 @@ int main() {
         
         c->JSON(StatusOK, body.str());
     });
+    
     //带参数请求 ?key=value
     c.GET("api/echo", [](Context* c){
         c->STRING(StatusOK, "hi, " + c->Query("name") + ",welcome to cweb");
     });
+    
     //动态路由
     c.GET("/api/dynamic/:param", [](Context* c) {
         c->STRING(StatusOK, "I got your param: " + c->Param("param"));
@@ -68,18 +71,20 @@ int main() {
     //multipart数据
     c.GET("/api/multipart/data", [](Context* c) {
         MultipartPart* part1 = new MultipartPart();
+        std::string text = "this is a text";
         part1->SetHeader("Content-Disposition", "form-data; name=\"text\"");
-        part1->SetData("this is a text");
+        part1->SetData(text);
         
         MultipartPart* part2 = new MultipartPart();
+        std::string json = "{\"name\": \"John\",\"age\": 30,\"city\": \"New York\"}";
         part2->SetHeader("Content-Disposition", "form-data; name=\"json\"");
         part2->SetHeader("Content-Type", "application/json");
-        part2->SetData("{\"name\": \"John\",\"age\": 30,\"city\": \"New York\"}");
+        part2->SetData(json);
         
         MultipartPart* part3 = new MultipartPart();
         part3->SetHeader("Content-Disposition", "form-data; name=\"image\"; filename=\"image.jpg\"");
         part3->SetHeader("Content-Type", "image/jpeg");
-        part3->SetFile("../resources/city1.jpg");
+        part3->SetFile("/Users/yangerjun/Desktop/cweb/cweb/cweb/resources/city1.jpg");
         
         c->MULTIPART(StatusOK, std::vector<MultipartPart *>{part1, part2, part3});
         delete part1;

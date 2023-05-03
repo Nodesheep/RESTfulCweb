@@ -55,11 +55,11 @@ std::string Context::PostForm(const std::string &key) const {
     return request_->PostForm(key);
 }
 
-void Context::STRING(HttpStatusCode code, const StringPiece& data) {
+void Context::STRING(HttpStatusCode code, const std::string& data) {
     std::string header;
     HttpResponse::SetStatusCode(code, header);
     HttpResponse::SetHeader("Content-Type", "text/html; charset=utf-8", header);
-    HttpResponse::SetHeader("Content-Length", std::to_string(data.Size()), header);
+    HttpResponse::SetHeader("Content-Length", std::to_string(data.size()), header);
     header += "\r\n";
     
     util::ByteData* bdata = new util::ByteData();
@@ -68,11 +68,11 @@ void Context::STRING(HttpStatusCode code, const StringPiece& data) {
     connection_->Send(bdata);
 }
 
-void Context::JSON(HttpStatusCode code, const StringPiece& data) {
+void Context::JSON(HttpStatusCode code, const std::string& data) {
     std::string header;
     HttpResponse::SetStatusCode(code, header);
     HttpResponse::SetHeader("Content-Type", "application/json; charset=utf-8", header);
-    HttpResponse::SetHeader("Content-Length", std::to_string(data.Size()), header);
+    HttpResponse::SetHeader("Content-Length", std::to_string(data.size()), header);
     //HttpResponse::SetBody(jsonstr, content);
     header += "\r\n";
     

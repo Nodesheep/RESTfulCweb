@@ -72,8 +72,8 @@ public:
     //FILE FormFile(const std::string& filename);
     //void SaveUploadedFile(File file, const std::string& path);
     
-    void STRING(HttpStatusCode code, const StringPiece& data);
-    void JSON(HttpStatusCode code, const StringPiece& data);
+    void STRING(HttpStatusCode code, const std::string& data);
+    void JSON(HttpStatusCode code, const std::string& data);
     void FILE(HttpStatusCode code, const std::string& filepath, std::string filename = "");
     
     void MULTIPART(HttpStatusCode code, std::vector<MultipartPart*> parts);
