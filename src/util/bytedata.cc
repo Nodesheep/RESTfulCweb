@@ -13,7 +13,7 @@ void ByteData::AddDataZeroCopy(const StringPiece& data) {
 void ByteData::AddDataZeroCopy(const void *data, size_t size) {
     DataPacket* dp = new DataPacket();
     dp->copy_ = false;
-    dp->data_.zero_copy_data_ = (char*)data;
+    dp->zero_copy_data_ = (char*)data;
     dp->size_ += size;
     datas_.push_back(dp);
 }
@@ -25,8 +25,8 @@ void ByteData::AddDataCopy(const StringPiece &data) {
 void ByteData::AddDataCopy(const void *data, size_t size) {
     DataPacket* dp = new DataPacket();
     dp->copy_ = true;
-    dp->data_.copy_data_ = new ByteBuffer(size * 2);
-    dp->data_.copy_data_->Append((const char*)data, size);
+    dp->copy_data_ = new ByteBuffer(size * 2);
+    dp->copy_data_->Append((const char*)data, size);
     dp->size_ += size;
     datas_.push_back(dp);
 }
@@ -34,7 +34,7 @@ void ByteData::AddDataCopy(const void *data, size_t size) {
 void ByteData::AppendData(const void *data, size_t size) {
     int len = (int)datas_.size();
     assert(len != 0 && !datas_[len-1]->copy_);
-    datas_[len-1]->data_.copy_data_->Append((const char*)data, size);
+    datas_[len-1]->copy_data_->Append((const char*)data, size);
     datas_[len-1]->size_ += size;
 }
 
@@ -47,8 +47,8 @@ void ByteData::AddFile(const std::string &filepath) {
     dp->fd_ = fd;
     dp->copy_ = false;
     dp->size_ += st.st_size;
-    dp->data_.zero_copy_data_ = (char*)mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    assert(dp->data_.zero_copy_data_ != MAP_FAILED);
+    dp->zero_copy_data_ = (char*)mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    assert(dp->zero_copy_data_ != MAP_FAILED);
     datas_.push_back(dp);
 }
 
@@ -58,8 +58,8 @@ void ByteData::AddFile(int fd, size_t size) {
     dp->fd_ = fd;
     dp->copy_ = false;
     dp->size_ += size;
-    dp->data_.zero_copy_data_ = (char*)mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
-    assert(dp->data_.zero_copy_data_ != MAP_FAILED);
+    dp->zero_copy_data_ = (char*)mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
+    assert(dp->zero_copy_data_ != MAP_FAILED);
     datas_.push_back(dp);
 }
 

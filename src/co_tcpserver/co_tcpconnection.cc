@@ -16,6 +16,8 @@ CoTcpConnection::CoTcpConnection(CoEventLoop* loop, CoSocket* socket, InetAddres
 CoTcpConnection::~CoTcpConnection() {}
 
 void CoTcpConnection::Send(util::ByteData *data) {
+    //TODO 重复数据拷贝 待优化
+    data->CopyDataIfNeed();
     send_datas_.push(data);
     if(!event_->Writable()) event_->EnableWriting();
 }
@@ -42,6 +44,7 @@ void CoTcpConnection::handleRead(Time time) {
 void CoTcpConnection::handleWrite() {
     while(true) {
         util::ByteData* data = send_datas_.front();
+        //TODO 有问题 没有使用hook_write 
         data->Writev(socket_->Fd());
         if(!data->Remain()) {
             send_datas_.pop();
@@ -50,6 +53,7 @@ void CoTcpConnection::handleWrite() {
         
         if(send_datas_.size() == 0) {
             event_->DisableWriting();
+            return;
         }
     }
 }

@@ -11,12 +11,9 @@ namespace util {
 
 class DataPacket {
 private:
-    union DataUnion {
-        ByteBuffer* copy_data_;
-        char* zero_copy_data_;
-    };
+    ByteBuffer* copy_data_ = nullptr;
+    char* zero_copy_data_ = nullptr;
     
-    DataUnion data_;
     size_t size_ = 0;
     int fd_ = -1;
     bool copy_ = false;
@@ -25,10 +22,10 @@ public:
     friend class ByteData;
     ~DataPacket() {
         if(copy_) {
-            delete data_.copy_data_;
+            delete copy_data_;
         }else {
             if(fd_ > 0) {
-                munmap(data_.zero_copy_data_, size_);
+                munmap(zero_copy_data_, size_);
                 close(fd_);
             }
             //外部传入的0拷贝内存数据应当自己管理
@@ -36,16 +33,17 @@ public:
     }
     
     const char* Data() const {
-        if(!copy_) return data_.zero_copy_data_;
-        else return data_.copy_data_->Peek();
+        if(!copy_) return zero_copy_data_;
+        else return copy_data_->Peek();
     }
     
     bool CopyIfNeed(size_t offset = 0) {
         if(copy_ || fd_ > 0) return false;
         copy_ = true;
         size_ -= offset;
-        data_.copy_data_ = new ByteBuffer(size_);
-        data_.copy_data_->Append(data_.zero_copy_data_ + offset, size_);
+        copy_data_ = new ByteBuffer(size_);
+        copy_data_->Append(zero_copy_data_ + offset, size_);
+        zero_copy_data_ = nullptr;
         return true;
     }
 };
