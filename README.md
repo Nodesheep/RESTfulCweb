@@ -105,7 +105,7 @@ int main() {
         MultipartPart* part3 = new MultipartPart();
         part3->SetHeader("Content-Disposition", "form-data; name=\"image\"; filename=\"image.jpg\"");
         part3->SetHeader("Content-Type", "image/jpeg");
-        part3->SetFile("/Users/yangerjun/Desktop/cweb/cweb/cweb/resources/city1.jpg");
+        part3->SetFile("../resources/city1.jpg");
         
         c->MULTIPART(StatusOK, std::vector<MultipartPart *>{part1, part2, part3});
         delete part1;
