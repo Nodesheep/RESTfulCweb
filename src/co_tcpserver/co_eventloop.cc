@@ -82,13 +82,13 @@ void CoEventLoop::RemoveEvent(Event *event) {
     events_.erase(coevent->fd_);
     poller_->RemoveEvent(event);
     
-    if(coevent->read_coroutine_) {
-        coevent->read_coroutine_->SetState(Coroutine::REMOVE);
-    }
-    
-    if(coevent->write_coroutine_) {
-        coevent->write_coroutine_->SetState(Coroutine::REMOVE);
-    }
+//    if(coevent->read_coroutine_) {
+//        coevent->read_coroutine_->SetState(Coroutine::REMOVE);
+//    }
+//    
+//    if(coevent->write_coroutine_) {
+//        coevent->write_coroutine_->SetState(Coroutine::REMOVE);
+//    }
 }
 
 CoEvent* CoEventLoop::GetEvent(int fd) {
@@ -126,12 +126,12 @@ void CoEventLoop::loop() {
         }
         
         while(running_coroutine_ && running_) {
-            if(running_coroutine_->State() == Coroutine::REMOVE) {
-                running_coroutines_.Erase(running_coroutine_);
-                delete running_coroutine_;
-                running_coroutine_ = running_coroutines_.Front();
-                continue;
-            }
+//            if(running_coroutine_->State() == Coroutine::REMOVE) {
+//                running_coroutines_.Erase(running_coroutine_);
+//                delete running_coroutine_;
+//                running_coroutine_ = running_coroutines_.Front();
+//                continue;
+//            }
             running_coroutine_->SetLoop(this);
             main_coroutine_->SwapTo(running_coroutine_);
             switch (running_coroutine_->State()) {

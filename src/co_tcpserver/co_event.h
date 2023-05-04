@@ -19,6 +19,8 @@ public:
     
     int Flags() const {return flags_;}
     void RemoveCoroutine(Coroutine* co);
+    void SetReadCoroutine(Coroutine* co);
+    void SetWriteCoroutine(Coroutine* co);
     
 private:
     int flags_ = 0;

@@ -110,8 +110,8 @@ private:
     std::unordered_map<Connection*, std::unordered_map<std::string, HttpRequest*>> conn_reqs_;
     RequestCallback request_callback_;
     
-    void handleMessage(Connection* conn, ByteBuffer* buf, Time time);
-    void handleKeepAliveMessage(Connection* conn, ByteBuffer* buf, Time time);
+    Connection::MessageState handleMessage(Connection* conn, ByteBuffer* buf, Time time);
+    Connection::MessageState handleKeepAliveMessage(Connection* conn, ByteBuffer* buf, Time time);
     void removeRequest(Connection* conn);
     
 public:

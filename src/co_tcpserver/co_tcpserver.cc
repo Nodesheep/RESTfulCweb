@@ -63,7 +63,7 @@ void CoTcpServer::handleAccept() {
         conn->close_callback_ = std::bind(&CoTcpServer::handleConnectionClose, this, std::placeholders::_1);
         conn->message_callback_ = message_callback_;
         living_connections_[id] = conn;
-        loop->AddTask(std::bind(&CoTcpConnection::connectEstablished, conn));
+        loop->AddTask(std::bind(&CoTcpConnection::handleMessage, conn));
     }
 }
 

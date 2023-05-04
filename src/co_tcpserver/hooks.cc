@@ -43,6 +43,7 @@ ssize_t hook_read(int fd, void *buf, size_t nbyte) {
     
     CoEvent* event = TLSCoEventLoop->GetEvent(fd);
     
+    //TODO hook写的有问题，应当是用户非阻塞！！
     if(!event || event->Flags() & O_NONBLOCK) {
         return ::read(fd, buf, nbyte);
     }
@@ -50,7 +51,8 @@ ssize_t hook_read(int fd, void *buf, size_t nbyte) {
     Timer* timer = TLSCoEventLoop->AddTimer(60, [event](){
         event->HandleTimeout();
     });
-
+    
+    event->SetReadCoroutine(TLSCoEventLoop->GetCurrentCoroutine());
     if(!event->Readable()) event->EnableReading();
     
     TLSCoEventLoop->GetCurrentCoroutine()->SetState(Coroutine::HOLD);
@@ -74,6 +76,7 @@ ssize_t hook_write(int fd, const void *buf, size_t nbyte) {
     }
     
     //避免重复添加事件
+    event->SetWriteCoroutine(TLSCoEventLoop->GetCurrentCoroutine());
     if(!event->Writable()) event->EnableWriting();
     
     TLSCoEventLoop->GetCurrentCoroutine()->SetState(Coroutine::HOLD);

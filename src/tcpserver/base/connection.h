@@ -14,15 +14,22 @@ namespace cweb {
 namespace tcpserver {
 
 class Connection {
+public:
+    enum MessageState {
+        FINISH,
+        PROCESS,
+        BAD
+    };
+    
+    typedef std::function<void(Connection*)> CloseCallback;
+    typedef std::function<MessageState(Connection*, util::ByteBuffer*, Time)> MessageCallback;
+    
 protected:
     enum ConnectState {
         INIT,
         CONNECT,
         CLOSED
     };
-    
-    typedef std::function<void(Connection*)> CloseCallback;
-    typedef std::function<void(Connection*, util::ByteBuffer*, Time)> MessageCallback;
     
     std::string id_ = nullptr;
     InetAddress* iaddr_ = nullptr;

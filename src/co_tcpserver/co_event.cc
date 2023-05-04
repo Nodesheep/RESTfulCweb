@@ -18,6 +18,8 @@ CoEvent::~CoEvent() {}
 
 void CoEvent::HandleEvent(Time receiveTime) {
     if(revents_ & READ_EVENT) {
+        this->DisableReading();
+        //read_coroutine_->SetState(Coroutine::READY);
         if(read_coroutine_) {
             read_coroutine_->SetState(Coroutine::READY);
         }else {
@@ -30,6 +32,7 @@ void CoEvent::HandleEvent(Time receiveTime) {
     }
     
     if(revents_ & WRITE_EVENT) {
+        this->DisableWriting();
         if(write_coroutine_) {
             write_coroutine_->SetState(Coroutine::READY);
         }else {
@@ -46,6 +49,16 @@ void CoEvent::RemoveCoroutine(Coroutine *co) {
     }else if(co == write_coroutine_) {
         write_coroutine_ = nullptr;
     }
+}
+
+void CoEvent::SetReadCoroutine(Coroutine *co) {
+    read_coroutine_ = co;
+    read_coroutine_->SetEvent(this);
+}
+
+void CoEvent::SetWriteCoroutine(Coroutine *co) {
+    write_coroutine_ = co;
+    write_coroutine_->SetEvent(this);
 }
 
 }

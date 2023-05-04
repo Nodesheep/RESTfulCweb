@@ -13,7 +13,7 @@
 ![项目结构](https://user-images.githubusercontent.com/62785394/232182858-82dcc9c4-4c48-4da8-8179-643b50d8f4e4.png)
 
 ## 框架使用
-项目接口遵循Restful设计风格，支持基本路由注册以及中间件注入。
+项目接口遵循Restful设计风格，非常简单易用，你可以通过下面这个例子快速掌握本框架的基本使用。
 ```
     #include "cweb.h"
 #include "context.h"
@@ -143,7 +143,7 @@ int main() {
   make
   ./CWEBSERVER
   //协程版 poll
-  cmake -DBUILD=CPOLL ..
+  cmake -DBUILD_FLAG=CPOLL ..
   make
   ./CWEBSERVER
 

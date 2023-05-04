@@ -12,11 +12,9 @@ class CoSocket;
 class CoEvent;
 class CoTcpConnection : public TcpConnection {
 protected:
-    void handleRead(Time time);
-    void handleWrite();
+    void handleMessage();
     void handleClose();
     void handleTimeout();
-    void connectEstablished();
     
 public:
     friend class CoTcpServer;

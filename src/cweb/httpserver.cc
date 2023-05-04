@@ -1,12 +1,12 @@
 #include "httpserver.h"
 #include "tcpconnection.h"
+#include "logger.h"
+#include "http_parser.h"
 #ifdef COROUTINE
 #include "co_tcpserver.h"
 #else
 #include "tcpserver.h"
 #endif
-#include "logger.h"
-#include "http_parser.h"
 
 #ifdef COROUTINE
 using namespace cweb::tcpserver::coroutine;
@@ -201,9 +201,9 @@ void HttpServer::Quit() {
     tcpserver_->Quit();
 }
 
-void HttpServer::handleMessage(Connection* conn, ByteBuffer* buf, Time time) {
+Connection::MessageState HttpServer::handleMessage(Connection* conn, ByteBuffer* buf, Time time) {
     if(conn->KeepAlive()) {
-        handleKeepAliveMessage(conn, buf, time);
+        return handleKeepAliveMessage(conn, buf, time);
     }else {
         HttpRequest* req = conn_req_[conn];
         if(req == nullptr) {
@@ -218,6 +218,7 @@ void HttpServer::handleMessage(Connection* conn, ByteBuffer* buf, Time time) {
             if(request_callback_) {
                 request_callback_(conn, req);
             }
+            return tcpserver::Connection::FINISH;
         //出错
         }else if(res < 0) {
             LOG(LOGLEVEL_WARN, CWEB_MODULE, "httpserver", "数据解析失败");
@@ -226,6 +227,7 @@ void HttpServer::handleMessage(Connection* conn, ByteBuffer* buf, Time time) {
             bdata->AddDataZeroCopy(response);
             conn->Send(bdata);
             delete req;
+            return tcpserver::Connection::BAD;
         //解析中
         }else {
             LOG(LOGLEVEL_INFO, CWEB_MODULE, "httpserver", "数据解析中");
@@ -235,11 +237,14 @@ void HttpServer::handleMessage(Connection* conn, ByteBuffer* buf, Time time) {
                 conn_req_[conn] = req;
                 conn->AddCloseHandlers(std::bind(&HttpServer::removeRequest, this, std::placeholders::_1));
             }
+            return tcpserver::Connection::PROCESS;
         }
     }
 }
 
-void HttpServer::handleKeepAliveMessage(Connection *conn, ByteBuffer *buf, Time time) {
+Connection::MessageState HttpServer::handleKeepAliveMessage(Connection *conn, ByteBuffer *buf, Time time) {
+    
+    return tcpserver::Connection::BAD;
     //TODO
     //分帧
     //解析头 上一针解析完才解析头
