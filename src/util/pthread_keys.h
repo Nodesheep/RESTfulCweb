@@ -24,4 +24,4 @@ typedef cweb::util::Singleton<PthreadKeys> PthreadKeysSingleton;
 }
 }
 
-#endif /* pthread_key_hpp */
+#endif

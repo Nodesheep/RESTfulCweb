@@ -1,10 +1,11 @@
 #include "bytedata.h"
+#include "hooks.h"
+//#include <sys/uio.h>
 #include <sys/stat.h>
-#include <sys/uio.h>
 #include <fcntl.h>
 
 namespace cweb {
-namespace util {
+namespace tcpserver {
 
 void ByteData::AddDataZeroCopy(const StringPiece& data) {
     AddDataZeroCopy(data.Data(), data.Size());
@@ -63,7 +64,7 @@ void ByteData::AddFile(int fd, size_t size) {
     datas_.push_back(dp);
 }
 
-size_t ByteData::Writev(int fd) {
+ssize_t ByteData::Writev(int fd) {
     if(!Remain()) return 0;
     std::vector<struct iovec> iovs;
     for(int i = (int)current_index_; i < datas_.size(); ++i) {
@@ -79,9 +80,11 @@ size_t ByteData::Writev(int fd) {
         iovs.push_back(iov);
     }
 
-    size_t n = ::writev(fd, (struct iovec*)(&*iovs.begin()), (int)iovs.size());
-    offset_ += n;
-    modifyIndexAndOffset();
+    ssize_t n = writev(fd, (struct iovec*)(&*iovs.begin()), (int)iovs.size());
+    if(n > 0) {
+        offset_ += n;
+        modifyIndexAndOffset();
+    }
     return n;
 }
 

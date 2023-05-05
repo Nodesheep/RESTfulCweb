@@ -14,11 +14,11 @@ class CoEvent : public Event {
 public:
     friend CoEventLoop;
     CoEvent(CoEventLoop* loop, int fd);
+    
     virtual ~CoEvent();
+    
     virtual void HandleEvent(Time receiveTime) override;
     
-    int Flags() const {return flags_;}
-    void RemoveCoroutine(Coroutine* co);
     void SetReadCoroutine(Coroutine* co);
     void SetWriteCoroutine(Coroutine* co);
     

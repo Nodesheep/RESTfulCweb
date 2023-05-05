@@ -1,9 +1,9 @@
 #include "co_tcpserver.h"
-#include "co_socket.h"
 #include "co_scheduler.h"
 #include "co_tcpconnection.h"
 #include "co_eventloop.h"
 #include "co_event.h"
+#include "socket.h"
 #include "logger.h"
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -34,9 +34,8 @@ void CoTcpServer::Start(int threadcnt) {
     accept_loop_->Run();
 }
 
-
 void CoTcpServer::init() {
-    accept_socket_ = CoSocket::CreateNonblockFdAndBind(addr_, false);
+    accept_socket_ = Socket::CreateFdAndBind(addr_, true);
     accept_event_ =  new CoEvent((CoEventLoop*)accept_loop_, accept_socket_->Fd());
     accept_event_->SetReadCallback(std::bind(&CoTcpServer::handleAccept, this));
 }
@@ -47,14 +46,15 @@ void CoTcpServer::handleAccept() {
 
         int connfd = accept_socket_->Accept(peeraddr);
     
-        CoSocket* socket = nullptr;
-        if(connfd > 0) socket = new CoSocket(connfd);
+        Socket* socket = nullptr;
+        if(connfd > 0) socket = new Socket(connfd);
         else {
             LOG(LOGLEVEL_WARN, CWEB_MODULE, "cotcpserver", "创建连接失败");
             delete peeraddr;
             continue;
         }
         
+        socket->SetNonBlock();
         CoEventLoop* loop = (CoEventLoop*)scheduler_->GetNextLoop();
         std::string id = boost::uuids::to_string(random_generator_());
         

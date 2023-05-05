@@ -35,7 +35,7 @@ TcpServer::~TcpServer() {
 
 void TcpServer::init() {
     //可以用指针
-    accept_socket_ = Socket::CreateNonblockFdAndBind(addr_);
+    accept_socket_ = Socket::CreateFdAndBind(addr_);
     if(!accept_socket_) {}
     accept_event_ =  new Event(accept_loop_, accept_socket_->Fd());
     accept_event_->SetReadCallback(std::bind(&TcpServer::handleAccept, this));

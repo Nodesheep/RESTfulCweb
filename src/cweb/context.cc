@@ -62,7 +62,7 @@ void Context::STRING(HttpStatusCode code, const std::string& data) {
     HttpResponse::SetHeader("Content-Length", std::to_string(data.size()), header);
     header += "\r\n";
     
-    util::ByteData* bdata = new util::ByteData();
+    ByteData* bdata = new ByteData();
     bdata->AddDataZeroCopy(header);
     bdata->AddDataZeroCopy(data);
     connection_->Send(bdata);
@@ -76,7 +76,7 @@ void Context::JSON(HttpStatusCode code, const std::string& data) {
     //HttpResponse::SetBody(jsonstr, content);
     header += "\r\n";
     
-    util::ByteData* bdata = new util::ByteData();
+    ByteData* bdata = new ByteData();
     bdata->AddDataZeroCopy(header);
     bdata->AddDataZeroCopy(data);
     connection_->Send(bdata);
@@ -102,7 +102,7 @@ void Context::FILE(HttpStatusCode code, const std::string &filepath, std::string
     HttpResponse::SetHeader("Content-Length", std::to_string(st.st_size), header);
     header += "\r\n";
     
-    util::ByteData* bdata = new util::ByteData();
+    ByteData* bdata = new ByteData();
     bdata->AddDataZeroCopy(header);
     bdata->AddFile(fd, st.st_size);
     
@@ -138,7 +138,7 @@ void Context::MULTIPART(HttpStatusCode code, std::vector<MultipartPart *> parts)
     HttpResponse::SetHeader("Content-Length", std::to_string(totalsize), header);
     
     
-    util::ByteData* bdata = new util::ByteData();
+    ByteData* bdata = new ByteData();
     bdata->AddDataZeroCopy(header);
     for(MultipartPart* part : parts) {
         bdata->AddDataZeroCopy(begin_boundary);

@@ -20,8 +20,7 @@ public:
         READY,
         HOLD,
         EXEC,
-        TERM,
-        REMOVE
+        TERM
     };
     
     Coroutine(std::function<void()> func, CoEventLoop* loop = nullptr);
@@ -33,13 +32,6 @@ public:
     void SetState(State state);
     State State() const {return state_;}
     void SetLoop(CoEventLoop* loop) {loop_ = loop;}
-    
-    void SetEvent(CoEvent* event) {event_ = event;}
-    void Remove() {
-        if(event_) {
-            event_->RemoveCoroutine(this);
-        }
-    }
     
 private:
     enum State state_ = READY;

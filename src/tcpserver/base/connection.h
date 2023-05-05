@@ -22,7 +22,7 @@ public:
     };
     
     typedef std::function<void(Connection*)> CloseCallback;
-    typedef std::function<MessageState(Connection*, util::ByteBuffer*, Time)> MessageCallback;
+    typedef std::function<MessageState(Connection*, ByteBuffer*, Time)> MessageCallback;
     
 protected:
     enum ConnectState {
@@ -35,23 +35,23 @@ protected:
     InetAddress* iaddr_ = nullptr;
     bool keep_alive_ = false;
     ConnectState connect_state_ = INIT;
-    util::ByteBuffer* outputbuffer_ = nullptr;
-    util::ByteBuffer* inputbuffer_ = nullptr;
+    ByteBuffer* outputbuffer_ = nullptr;
+    ByteBuffer* inputbuffer_ = nullptr;
     CloseCallback close_callback_;
     MessageCallback message_callback_;
     std::vector<CloseCallback> close_handlers_;
-    std::queue<util::ByteData*> send_datas_;
+    std::queue<ByteData*> send_datas_;
     
     void handleRead(Time time);
     void handleWrite();
     void handleClose();
     void sendInLoop(const void* data, size_t len);
-    void sendBufferInLoop(util::ByteBuffer* buffer);
+    void sendBufferInLoop(ByteBuffer* buffer);
     void connectEstablished();
     
 public:
     Connection(InetAddress* addr, const std::string& id) : iaddr_(addr), id_(id),
-    outputbuffer_(new util::ByteBuffer()), inputbuffer_(new util::ByteBuffer()) {}
+    outputbuffer_(new ByteBuffer()), inputbuffer_(new ByteBuffer()) {}
     
     virtual ~Connection() {
         delete iaddr_;
@@ -59,6 +59,7 @@ public:
         delete inputbuffer_;
     }
     
+    std::string Id() const {return id_;}
     bool KeepAlive() const {return keep_alive_;}
     void SetCloseCallback(CloseCallback cb) {close_callback_ = std::move(cb);}
     //void SetRemoveRequestCallback(CloseCallback cb) {remove_request_callback_ = std::move(cb);}
@@ -70,7 +71,7 @@ public:
     virtual void Send(const std::vector<std::iostream*>& streams) = 0;
      */
      
-    virtual void Send(util::ByteData* data) = 0;
+    virtual void Send(ByteData* data) = 0;
 };
 
 }

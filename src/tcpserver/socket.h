@@ -2,8 +2,7 @@
 #define CWEB_TCP_SOCKET_H_
 
 #include "noncopyable.h"
-#include <sys/types.h>
-#include <sys/uio.h>
+#include "hooks.h"
 
 namespace cweb {
 namespace tcpserver {
@@ -26,10 +25,10 @@ public:
     virtual ssize_t Write(const void* buffer, size_t len);
     virtual ssize_t Readv(const struct iovec* iov, int iovcnt);
     virtual ssize_t Writev(const struct iovec* iov, int iovcnt);
-    virtual ssize_t Recv(void* buffer, size_t len, int flags);
-    virtual ssize_t Send(const void* buffer, size_t len, int flags);
+    //virtual ssize_t Recv(void* buffer, size_t len, int flags);
+    //virtual ssize_t Send(const void* buffer, size_t len, int flags);
     
-    static Socket* CreateNonblockFdAndBind(InetAddress* addr, bool nonblock = true);
+    static Socket* CreateFdAndBind(InetAddress* addr, bool nonblock = true);
     
 protected:
     int fd_ = -1;

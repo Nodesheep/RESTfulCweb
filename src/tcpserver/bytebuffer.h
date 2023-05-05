@@ -4,7 +4,7 @@
 #include <string>
 
 namespace cweb {
-namespace util {
+namespace tcpserver {
 
 static const size_t kCheapPrepend = 8;
 static const size_t kInitialSize = 1024;

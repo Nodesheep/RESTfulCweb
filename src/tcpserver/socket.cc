@@ -1,15 +1,15 @@
 #include "socket.h"
-#include <fcntl.h>
-#include <sys/socket.h>
 #include "inetaddress.h"
-#include <unistd.h>
 #include "eventloop.h"
+#include "hooks.h"
+#include <fcntl.h>
+#include <unistd.h>
 
 static const int kMaxConnCount = 128;
 namespace cweb {
 namespace tcpserver {
 
-Socket* Socket::CreateNonblockFdAndBind(InetAddress* addr, bool nonblock) {
+Socket* Socket::CreateFdAndBind(InetAddress* addr, bool nonblock) {
     int fd = -1;
     if(addr->ipv6_) {
         fd = ::socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
@@ -51,7 +51,7 @@ int Socket::Accept(InetAddress* peeraddr) {
     sockaddr addr;
     memset(&addr, 0, sizeof(addr));
     socklen_t len = static_cast<socklen_t>(sizeof(addr));
-    int connfd = ::accept(fd_, &addr, &len);
+    int connfd = accept(fd_, &addr, &len);
     
     if(connfd  < 0) return -1;
     
@@ -72,28 +72,29 @@ void Socket::Close() {
 }
 
 ssize_t Socket::Read(void *buffer, size_t len) {
-    return ::read(fd_, buffer, len);
+   // return ::read(fd_, buffer, len);
+    return read(fd_, buffer, len);
 }
 
 ssize_t Socket::Write(const void *buffer, size_t len) {
-    return ::write(fd_, buffer, len);
+    return write(fd_, buffer, len);
 }
 
 ssize_t Socket::Readv(const struct iovec *iov, int iovcnt) {
-    return ::readv(fd_, iov, iovcnt);
+    return readv(fd_, iov, iovcnt);
 }
 
 ssize_t Socket::Writev(const struct iovec *iov,int iovcnt) {
-    return ::writev(fd_, iov, iovcnt);
+    return writev(fd_, iov, iovcnt);
 }
 
-ssize_t Socket::Recv(void *buffer, size_t len, int flags) {
-    return ::recv(fd_, buffer, len, flags);
-}
-
-ssize_t Socket::Send(const void *buffer, size_t len, int flags) {
-    return ::send(fd_, buffer, len, flags);
-}
+//ssize_t Socket::Recv(void *buffer, size_t len, int flags) {
+//    return ::recv(fd_, buffer, len, flags);
+//}
+//
+//ssize_t Socket::Send(const void *buffer, size_t len, int flags) {
+//    return ::send(fd_, buffer, len, flags);
+//}
 
 int Socket::SetNonBlock() {
     if(nonblock_) return 0;

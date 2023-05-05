@@ -32,7 +32,7 @@ void TcpConnection::handleRead(Time time) {
         timeout_timer_ = nullptr;
     }
     
-    size_t n = socket_->Read((void*)inputbuffer_->Back(), inputbuffer_->WritableBytes());
+    ssize_t n = socket_->Read((void*)inputbuffer_->Back(), inputbuffer_->WritableBytes());
     if(n > 0) {
         inputbuffer_->WriteBytes(n);
         if(message_callback_) {
@@ -50,7 +50,7 @@ void TcpConnection::handleRead(Time time) {
 
 void TcpConnection::handleWrite() {
     if(event_ && event_->Writable()) {
-        util::ByteData* data = send_datas_.front();
+        ByteData* data = send_datas_.front();
         data->Writev(socket_->Fd());
         if(!data->Remain()) {
             send_datas_.pop();
@@ -84,7 +84,7 @@ void TcpConnection::handleTimeout() {
     handleClose();
 }
 
-void TcpConnection::Send(util::ByteData *data) {
+void TcpConnection::Send(ByteData *data) {
     if(ownerloop_->isInLoopThread()) {
         sendInLoop(data);
     }else {
@@ -92,7 +92,7 @@ void TcpConnection::Send(util::ByteData *data) {
     }
 }
 
-void TcpConnection::sendInLoop(util::ByteData *data) {
+void TcpConnection::sendInLoop(ByteData *data) {
     if(send_datas_.size() == 0 && !event_->Writable()) {
         data->Writev(socket_->Fd());
     }

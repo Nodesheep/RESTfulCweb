@@ -18,10 +18,10 @@ protected:
     
 public:
     friend class CoTcpServer;
-    CoTcpConnection(CoEventLoop* loop, CoSocket* socket, InetAddress* addr, const std::string& id);
+    CoTcpConnection(CoEventLoop* loop, Socket* socket, InetAddress* addr, const std::string& id);
     virtual ~CoTcpConnection();
 
-    virtual void Send(util::ByteData* data) override;
+    virtual void Send(ByteData* data) override;
 };
     
 }

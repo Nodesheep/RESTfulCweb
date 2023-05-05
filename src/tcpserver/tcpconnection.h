@@ -23,7 +23,7 @@ protected:
     void handleWrite();
     void handleClose();
     void handleTimeout();
-    void sendInLoop(util::ByteData* data);
+    void sendInLoop(ByteData* data);
     void connectEstablished();
     
     EventLoop* ownerloop_ = nullptr;
@@ -47,7 +47,7 @@ public:
     virtual void Send(const std::vector<std::iostream*>& streams) override;
      */
      
-    virtual void Send(util::ByteData* data) override;
+    virtual void Send(ByteData* data) override;
     
 };
 

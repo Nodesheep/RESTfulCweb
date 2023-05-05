@@ -7,7 +7,7 @@
 #include <sys/mman.h>
 
 namespace cweb {
-namespace util {
+namespace tcpserver {
 
 class DataPacket {
 private:
@@ -28,7 +28,6 @@ public:
                 munmap(zero_copy_data_, size_);
                 close(fd_);
             }
-            //外部传入的0拷贝内存数据应当自己管理
         }
     }
     
@@ -72,7 +71,7 @@ public:
     void AddFile(const std::string& filepath);
     void AddFile(int fd, size_t size);
  
-    size_t Writev(int fd);
+    ssize_t Writev(int fd);
     bool Remain();
     void CopyDataIfNeed();
 };

@@ -3,13 +3,16 @@
 
 
 #include <functional>
+#include <fcntl.h>
 
 namespace cweb {
 namespace tcpserver {
 
-#define NONE_EVENT 0
-#define READ_EVENT 1
-#define WRITE_EVENT 4
+#define NONE_EVENT 0x0000
+#define READ_EVENT 0x0001
+#define WRITE_EVENT 0x0004
+#define HUP_EVENT 0x0010
+#define ERR_EVENT 0x0008
 
 class EventLoop;
 class Time;
@@ -21,7 +24,9 @@ public:
     friend class PollPoller;
     friend class EPollPoller;
     friend EventLoop;
-    Event(EventLoop* loop, int fd) : loop_(loop), fd_(fd) {}
+    Event(EventLoop* loop, int fd) : loop_(loop), fd_(fd) {
+        flags_ = ::fcntl(fd_, F_GETFL, 0);
+    }
     
     typedef std::function<void()> EventCallback;
     typedef std::function<void(Time)> ReadEventCallback;
@@ -35,12 +40,12 @@ public:
     void DisableWriting();
     void DisableAll();
     
+    virtual void HandleEvent(Time receiveTime);
+    
     bool Readable() const {return events_ & READ_EVENT;}
     bool Writable() const {return events_ & WRITE_EVENT;}
-    
-    virtual void HandleEvent(Time receiveTime);
+
     void HandleTimeout();
-    
     void Remove();
     
     void SetReadCallback(ReadEventCallback cb) { read_callback_ = std::move(cb); }
@@ -49,12 +54,14 @@ public:
     void SetErrorCallback(EventCallback cb) { error_callback_ = std::move(cb); }
     
     int Fd() const {return fd_;}
+    int Flags() const {return flags_;}
     
 protected:
     int fd_ = 0;
     int events_ = 0;
     int revents_ = 0;
     int index_ = -1;
+    int flags_ = 0;
     EventLoop* loop_ = nullptr;
     ReadEventCallback read_callback_;
     EventCallback write_callback_;

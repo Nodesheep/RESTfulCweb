@@ -221,8 +221,8 @@ Connection::MessageState HttpServer::handleMessage(Connection* conn, ByteBuffer*
             return tcpserver::Connection::FINISH;
         //出错
         }else if(res < 0) {
-            LOG(LOGLEVEL_WARN, CWEB_MODULE, "httpserver", "数据解析失败");
-            util::ByteData* bdata = new util::ByteData();
+            LOG(LOGLEVEL_WARN, CWEB_MODULE, "httpserver", "conn: %s 数据解析失败", conn->Id().c_str());
+            ByteData* bdata = new ByteData();
             std::string response("HTTP/1.1 400 Bad Request\r\n\r\n");
             bdata->AddDataZeroCopy(response);
             conn->Send(bdata);

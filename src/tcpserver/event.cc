@@ -31,7 +31,7 @@ void Event::DisableAll() {
 }
 
 void Event::HandleEvent(Time receiveTime) {
-    if(revents_ & READ_EVENT) {
+    if(revents_ & (READ_EVENT | HUP_EVENT | ERR_EVENT)) {
         read_callback_(receiveTime);
     }
     
