@@ -5,7 +5,9 @@
 
 框架层介绍:https://zhuanlan.zhihu.com/p/626366230
 
-协程改造总结:https://zhuanlan.zhihu.com/p/622738879
+协程改造总结:https://zhuanlan.zhihu.com/p/622738879   
+
+线程模型与协程模型:https://zhuanlan.zhihu.com/p/627383336
 
 ## 项目结构
 项目从上往下可分为框架层(CWEB)、协议层(HTTPSERVER)、传输层(TCPSERVRE)以及基础组件层(LOG和UTils)。CWEB主要负责路由注册与匹配，HTTPSERVER负责将数据封装成HTTPRequset交由CWEB处理，TCPSERVER负责数据传输，目前提供了线程版和协程版两种模式，LOG是项目的日志组件，Utils中包含了项目中通用的基础能力，如无锁队列、内存池、buffer等。
