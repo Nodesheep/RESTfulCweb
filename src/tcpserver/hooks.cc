@@ -26,6 +26,7 @@ typedef ssize_t (*readv_fun)(int fd, const struct iovec *iov, int iovcnt);
 typedef ssize_t (*write_fun)(int, const void *, size_t);
 typedef ssize_t (*writev_fun)(int fd, const struct iovec *iov, int iovcnt);
 typedef int (*accept_fun)(int s, struct sockaddr *addr, socklen_t *addrlen);
+typedef unsigned int (*sleep_fun)(unsigned int seconds);
 
 template<typename OriginFun, typename... Args>
 ssize_t io_handler(int fd, OriginFun fun, int type, Args&&... args) {
@@ -108,6 +109,22 @@ ssize_t write(int fd, const void *buf, size_t nbyte) {
 ssize_t writev(int fd, const struct iovec *iov, int iovcnt) {
     static writev_fun writev_f = (writev_fun)dlsym(RTLD_NEXT, "writev");
     return io_handler(fd, writev_f, WRITE_EVENT, iov, iovcnt);
+}
+
+unsigned int sleep(unsigned int seconds) {
+    static sleep_fun sleep_f = (sleep_fun)dlsym(RTLD_NEXT, "sleep");
+#ifdef COROUTINE
+    CoEventLoop* TLSCoEventLoop = (CoEventLoop*)pthread_getspecific(util::PthreadKeysSingleton::GetInstance()->TLSEventLoop);
+    Coroutine* co = TLSCoEventLoop->GetCurrentCoroutine();
+    TLSCoEventLoop->AddTimer(seconds, [TLSCoEventLoop, co](){
+        TLSCoEventLoop->AddCoroutineWithState(co);
+    });
+    TLSCoEventLoop->GetCurrentCoroutine()->SetState(Coroutine::HOLD);
+    TLSCoEventLoop->GetCurrentCoroutine()->SwapTo(TLSCoEventLoop->GetMainCoroutine());
+    return 0;
+#else
+    return sleep_f(seconds);
+#endif
 }
 
 }

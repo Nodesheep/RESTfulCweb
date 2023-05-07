@@ -51,6 +51,8 @@ void CoTcpConnection::handleMessage() {
             Time time = Time::Now();
             LOG(LOGLEVEL_INFO, CWEB_MODULE, "cotcpconnection", "conn: %s 获取数据", id_.c_str());
             inputbuffer_->WriteBytes(n);
+            //sleep(3);
+            //LOG(LOGLEVEL_INFO, CWEB_MODULE, "cotcpconnection", "conn: %s 睡醒", id_.c_str());
             if(message_callback_) {
                 MessageState state = message_callback_(this, inputbuffer_, time);
                 if(state == BAD) {

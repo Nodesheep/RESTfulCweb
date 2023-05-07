@@ -46,8 +46,6 @@ private:
     std::string filepath_ = "";
     //写入时是多写单读
     LogfilePipe* logging_pipe_;
-    //回收时是单写多读
-    LogfilePipe* retrieving_pipe_;
     LogWriter* writer_;
     std::string module_;
     std::mutex mutex_;

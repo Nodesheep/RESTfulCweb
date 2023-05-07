@@ -1,6 +1,5 @@
 #include "logger.h"
 #include <sys/time.h>
-#include "threadlocal_memorypool.h"
 #include "pthread_keys.h"
 
 namespace cweb {
@@ -9,7 +8,7 @@ namespace log {
 
 static const size_t kMaxLogContentLength = 256;
 
-Logger::Logger(const std::string& module) : module_(module) {}
+Logger::Logger(const std::string& module, LogWriter* writer) : module_(module), writer_(writer) {}
 
 Logger::~Logger() {
     for(LogAppender* appender : appenders_) {
@@ -18,7 +17,8 @@ Logger::~Logger() {
 }
 
 void Logger::Log(LogLevel level, const std::string &module, const std::string &tag, const char *format, ...) {
-    LogInfo* info = (LogInfo*)((util::MemoryPool*)pthread_getspecific(util::PthreadKeysSingleton::GetInstance()->TLSMemoryPool))->Allocate(sizeof(LogInfo));
+    
+    LogInfo* info = writer_->AllocLogInfo();
 
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -71,7 +71,7 @@ LoggerManager::~LoggerManager() {
 Logger* LoggerManager::GetLogger(const std::string& module) {
     Logger* logger = loggers_[module];
     if(!logger) {
-        logger = new Logger();
+        logger = new Logger(module, writer_);
         logger->AddAppender(new ConsoleAppender(formatter_));
         logger->AddAppender(new FileAppender(formatter_, writer_, module));
         std::unique_lock<std::mutex> lock(mutex_);

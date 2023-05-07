@@ -19,7 +19,7 @@ namespace log {
 class Logger {
 public:
 
-    Logger(const std::string& module = "root");
+    Logger(const std::string& module = "root", LogWriter* writer = nullptr);
     ~Logger();
 
     void Log(LogLevel level, const std::string& module, const std::string& tag, const char *format, ...);
@@ -29,6 +29,7 @@ public:
 private:
     const std::string module_;
     std::vector<LogAppender*> appenders_;
+    LogWriter* writer_ = nullptr;
     LogLevel log_level_ = LOGLEVEL_INFO;
     
     void log(LogLevel level, LogInfo* loginfo);

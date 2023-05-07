@@ -134,6 +134,7 @@ int main() {
 ## 编译运行
 ```
   项目目前支持在linux和类unix平台运行。
+  //如果想要将日志写入文件中请在src同级目录下创建logfile目录
   //如果没有build目录请在src同级目录下创建build目录
   cd build
 

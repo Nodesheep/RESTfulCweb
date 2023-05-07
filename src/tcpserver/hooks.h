@@ -15,6 +15,7 @@ ssize_t write(int fd, const void *buf, size_t nbyte);
 ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
 
 int accept(int fd, struct sockaddr *addr, socklen_t *len);
+unsigned int sleep(unsigned int seconds);
 
 }
 
