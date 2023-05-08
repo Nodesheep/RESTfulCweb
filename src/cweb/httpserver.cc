@@ -235,6 +235,7 @@ Connection::MessageState HttpServer::handleMessage(Connection* conn, ByteBuffer*
             //在短连接中不需要单独为request设置销毁定时器，跟随connection一同消亡
             if(conn_req_[conn] == nullptr) {
                 conn_req_[conn] = req;
+                //解决解析过程中对端关闭导致无法继续解析而导致request无法被销毁的问题
                 conn->AddCloseHandlers(std::bind(&HttpServer::removeRequest, this, std::placeholders::_1));
             }
             return tcpserver::Connection::PROCESS;

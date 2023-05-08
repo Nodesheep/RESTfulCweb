@@ -76,6 +76,7 @@ block:
     TLSCoEventLoop->GetCurrentCoroutine()->SetState(Coroutine::HOLD);
     TLSCoEventLoop->GetCurrentCoroutine()->SwapTo(TLSCoEventLoop->GetMainCoroutine());
     
+    //TODO 考虑timer事件和读写事件同时入队列的情况
     if(timer) {
         TLSCoEventLoop->RemoveTimer(timer);
     }
@@ -88,7 +89,42 @@ block:
 
 int accept(int fd, struct sockaddr *addr, socklen_t *len) {
     static accept_fun accept_f = (accept_fun)dlsym(RTLD_NEXT, "accept");
-    return (int)io_handler(fd, accept_f, READ_EVENT, addr, len);
+#ifdef COROUTINE
+    CoEventLoop* TLSCoEventLoop = (CoEventLoop*)pthread_getspecific(util::PthreadKeysSingleton::GetInstance()->TLSEventLoop);
+    
+    if(!TLSCoEventLoop) {
+        return accept_f(fd, addr, len);
+    }
+    
+    CoEvent* event = TLSCoEventLoop->GetEvent(fd);
+    
+    if(!event) {
+        return accept_f(fd, addr, len);
+    }
+    
+    if(event->Flags() & O_NONBLOCK) {
+        ssize_t n = accept_f(fd, addr, len);
+        while(n == -1 && errno == EINTR) {
+            n = accept_f(fd, addr, len);
+        }
+        if(n == -1 && errno == EAGAIN) {
+            goto block;
+        }
+        return (int)n;
+    }else {
+        goto block;
+    }
+block:
+    if(!event->Readable()) {
+        event->EnableReading();
+        event->SetReadCoroutine(TLSCoEventLoop->GetCurrentCoroutine());
+    }
+    TLSCoEventLoop->GetCurrentCoroutine()->SetState(Coroutine::HOLD);
+    TLSCoEventLoop->GetCurrentCoroutine()->SwapTo(TLSCoEventLoop->GetMainCoroutine());
+#else
+    return accept_f(fd, addr, len);
+#endif
+    return accept_f(fd, addr, len);
 }
 
 ssize_t read(int fd, void *buf, size_t nbyte) {

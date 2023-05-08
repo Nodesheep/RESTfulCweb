@@ -38,7 +38,7 @@ void TcpConnection::handleRead(Time time) {
         if(message_callback_) {
             message_callback_(this, inputbuffer_, time);
         }
-        timeout_timer_ = ownerloop_->AddTimer(50, std::bind(&TcpConnection::handleTimeout, this));
+        timeout_timer_ = ownerloop_->AddTimer(60, std::bind(&TcpConnection::handleTimeout, this));
     }else if(n == 0) {
         LOG(LOGLEVEL_INFO, CWEB_MODULE, "tcpconnection", "conn: %s 对端主动关闭", id_.c_str());
         handleClose();
@@ -113,7 +113,7 @@ void TcpConnection::connectEstablished() {
     event_->SetReadCallback(std::bind(&TcpConnection::handleRead, this, std::placeholders::_1));
     event_->SetWriteCallback(std::bind(&TcpConnection::handleWrite, this));
     event_->EnableReading();
-    timeout_timer_ = ownerloop_->AddTimer(50, std::bind(&TcpConnection::handleTimeout, this));
+    timeout_timer_ = ownerloop_->AddTimer(60, std::bind(&TcpConnection::handleTimeout, this));
     connect_state_ = CONNECT;
     LOG(LOGLEVEL_INFO, CWEB_MODULE, "tcpconnection", "conn: %s established", id_.c_str());
 }
