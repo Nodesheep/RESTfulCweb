@@ -54,14 +54,21 @@ public:
     size_t ReadableBytes() const {return writeindex_ - readindex_;}
     size_t PrependableBytes() const {return readindex_;}
     
+    char& operator[](int index) {
+        return *(buffer_ + kCheapPrepend + index);
+    }
+    
     const char* Peek() const {return buffer_ + readindex_;}
     const char* Back() const {return buffer_ + writeindex_;}
     
-    int ReadFd(int fd);
+    int Readv(int fd);
     void ReadUtil(const char* end);
     void ReadBytes(size_t len);
     void WriteBytes(size_t len);
     void ReadAll();
+    
+    int ReadSome(void* data, size_t len);
+    int ReadToBuffer(ByteBuffer* buf, size_t len);
     
     const char* ReadJSON();
     const char* FindCRLF();

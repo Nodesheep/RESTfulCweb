@@ -11,7 +11,7 @@ namespace tcpserver {
 class EventLoop;
 class EventLoopThread {
 protected:
-    EventLoop* loop_ = nullptr;
+    std::shared_ptr<EventLoop> loop_;
     bool stop_ = true;
     std::string name_;
     pthread_t tid_;
@@ -24,7 +24,7 @@ public:
     EventLoopThread(const std::string& name = "") : name_(name) {};
     ~EventLoopThread();
     
-    virtual EventLoop* StartLoop();
+    virtual std::shared_ptr<EventLoop> StartLoop();
     virtual void StopLoop();
     std::string Name() const {return name_;}
 };

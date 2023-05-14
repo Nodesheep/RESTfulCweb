@@ -23,7 +23,7 @@ public:
         TERM
     };
     
-    Coroutine(std::function<void()> func, CoEventLoop* loop = nullptr);
+    Coroutine(std::function<void()> func, std::shared_ptr<CoEventLoop> loop = nullptr);
     ~Coroutine();
     void SwapIn();
     void SwapOut();
@@ -31,13 +31,13 @@ public:
     
     void SetState(State state);
     State State() const {return state_;}
-    void SetLoop(CoEventLoop* loop) {loop_ = loop;}
+    void SetLoop(std::shared_ptr<CoEventLoop> loop) {loop_ = loop;}
     
 private:
     enum State state_ = READY;
     CoroutineContext* context_;
     std::function<void()> func_;
-    CoEventLoop* loop_;
+    std::shared_ptr<CoEventLoop> loop_;
     CoEvent* event_ = nullptr;
     void run();
     static void coroutineFunc(void* vp);

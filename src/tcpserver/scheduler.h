@@ -11,16 +11,16 @@ class EventLoop;
 class EventLoopThread;
 class Scheduler : public util::Noncopyable {
 protected:
-    EventLoop* baseloop_ = nullptr;
+    std::shared_ptr<EventLoop> baseloop_;
     int next_ = -1;
     int threadcnt_ = 0;
-    std::vector<EventLoop*> loops_;
-    std::vector<EventLoopThread*> threads_;
+    std::vector<std::shared_ptr<EventLoop>> loops_;
+    std::vector<std::unique_ptr<EventLoopThread>> threads_;
     
 public:
-    Scheduler(EventLoop* baseloop, int threadcnt);
+    Scheduler(std::shared_ptr<EventLoop> baseloop, int threadcnt);
     ~Scheduler();
-    EventLoop* GetNextLoop();
+    std::shared_ptr<EventLoop> GetNextLoop();
     virtual void Start();
     virtual void Stop();
 };

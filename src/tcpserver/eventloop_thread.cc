@@ -10,7 +10,7 @@ EventLoopThread::~EventLoopThread() {
     }
 }
 
-EventLoop* EventLoopThread::StartLoop() {
+std::shared_ptr<EventLoop> EventLoopThread::StartLoop() {
     stop_ = false;
     pthread_create(&tid_, NULL, threadFunc, this);
     //thread_ = std::thread(std::bind(&EventLoopThread::createLoopAndRun, this));
@@ -40,15 +40,15 @@ void* EventLoopThread::threadFunc(void* arg) {
 }
 
 void EventLoopThread::createLoopAndRun() {
-    EventLoop loop;
+    std::shared_ptr<EventLoop> loop(new EventLoop());
     
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        loop_ = &loop;
+        loop_ = loop;
         cond_.notify_all();
     }
     
-    loop.Run();
+    loop->Run();
 }
 
 

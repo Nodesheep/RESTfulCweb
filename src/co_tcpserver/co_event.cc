@@ -8,8 +8,8 @@ namespace cweb {
 namespace tcpserver {
 namespace coroutine {
 
-CoEvent::CoEvent(CoEventLoop* loop, int fd)
-: Event(loop, fd) {}
+CoEvent::CoEvent(std::shared_ptr<CoEventLoop> loop, int fd, bool is_socket)
+: Event(loop, fd, is_socket) {}
 
 CoEvent::~CoEvent() {}
 
@@ -27,7 +27,7 @@ void CoEvent::HandleEvent(Time receiveTime) {
             read_coroutine_ = new Coroutine([this, receiveTime](){
                 read_callback_(receiveTime);
             });
-            ((CoEventLoop*)loop_)->AddCoroutineWithState(read_coroutine_);
+            (std::dynamic_pointer_cast<CoEventLoop>(loop_))->AddCoroutineWithState(read_coroutine_);
         }
     }
     
@@ -37,8 +37,19 @@ void CoEvent::HandleEvent(Time receiveTime) {
             write_coroutine_->SetState(Coroutine::READY);
         }else {
             write_coroutine_ = new Coroutine(write_callback_);
-            ((CoEventLoop*)loop_)->AddCoroutineWithState(write_coroutine_);
+            (std::dynamic_pointer_cast<CoEventLoop>(loop_))->AddCoroutineWithState(write_coroutine_);
         }
+    }
+}
+
+void CoEvent::TriggerEvent() {
+    triggered_ = true;
+    if(Readable() && read_coroutine_) {
+        read_coroutine_->SetState(Coroutine::READY);
+    }
+    
+    if(Writable() && write_coroutine_) {
+        write_coroutine_->SetState(Coroutine::READY);
     }
 }
 

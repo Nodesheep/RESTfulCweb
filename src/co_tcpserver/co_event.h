@@ -13,7 +13,7 @@ class CoEvent : public Event {
     
 public:
     friend CoEventLoop;
-    CoEvent(CoEventLoop* loop, int fd);
+    CoEvent(std::shared_ptr<CoEventLoop> loop, int fd, bool is_socket = false);
     
     virtual ~CoEvent();
     
@@ -21,8 +21,10 @@ public:
     
     void SetReadCoroutine(Coroutine* co);
     void SetWriteCoroutine(Coroutine* co);
-    
+    void TriggerEvent();
+    bool Triggred() {return triggered_;}
 private:
+    bool triggered_ = false;
     int flags_ = 0;
     Coroutine* read_coroutine_ = nullptr;
     Coroutine* write_coroutine_ = nullptr;

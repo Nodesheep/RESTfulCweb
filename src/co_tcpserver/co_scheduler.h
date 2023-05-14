@@ -14,7 +14,7 @@ class CoScheduler : public Scheduler {
 private:
 
 public:
-    CoScheduler(CoEventLoop* baseloop, int threadcnt);
+    CoScheduler(std::shared_ptr<CoEventLoop> baseloop, int threadcnt);
     virtual void Start() override;
     
 };

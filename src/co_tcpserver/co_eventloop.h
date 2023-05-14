@@ -14,10 +14,8 @@ namespace coroutine {
 
 class CoEvent;
 class Coroutine;
-class Scheduler;
 class CoEventLoop : public EventLoop {
 private:
-    Scheduler* scheduler_;
     Coroutine* running_coroutine_ = nullptr;
     Coroutine* next_coroutine_ = nullptr;
     Coroutine* main_coroutine_ = nullptr;

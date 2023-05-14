@@ -16,9 +16,9 @@ protected:
     
 public:
     CoEventLoopThread(const std::string& name = "") : EventLoopThread(name) {};
-    ~CoEventLoopThread();
+    ~CoEventLoopThread() {};
     
-    virtual EventLoop* StartLoop() override;
+    virtual std::shared_ptr<EventLoop> StartLoop() override;
 };
 
 }

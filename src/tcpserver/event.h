@@ -24,7 +24,7 @@ public:
     friend class PollPoller;
     friend class EPollPoller;
     friend EventLoop;
-    Event(EventLoop* loop, int fd) : loop_(loop), fd_(fd) {
+    Event(std::shared_ptr<EventLoop> loop, int fd, bool is_socket = false) : loop_(loop), fd_(fd), is_socket_(is_socket) {
         flags_ = ::fcntl(fd_, F_GETFL, 0);
     }
     
@@ -55,6 +55,7 @@ public:
     
     int Fd() const {return fd_;}
     int Flags() const {return flags_;}
+    bool IsSocket() const {return is_socket_;}
     
 protected:
     int fd_ = 0;
@@ -62,7 +63,8 @@ protected:
     int revents_ = 0;
     int index_ = -1;
     int flags_ = 0;
-    EventLoop* loop_ = nullptr;
+    bool is_socket_ = false;
+    std::shared_ptr<EventLoop> loop_;
     ReadEventCallback read_callback_;
     EventCallback write_callback_;
     EventCallback timeout_callback_;

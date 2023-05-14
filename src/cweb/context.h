@@ -5,57 +5,35 @@
 #include <unordered_map>
 #include <string>
 #include "router.h"
-#include "connection.h"
 #include "bytebuffer.h"
 #include "http_code.h"
 #include "httpserver.h"
+#include "httprequest.h"
+#include "websocket.h"
 
 using namespace cweb::tcpserver;
+using namespace cweb::httpserver;
 using namespace cweb::util;
 
 namespace cweb {
 
-//TODO 临时设计 后续优化
-class MultipartPart {
-private:
-    std::string headers_;
-    const char* data_ = nullptr;
-    int fd_ = -1;
-    size_t size_ = 0;
-
-public:
-    friend class Context;
-    void SetHeader(const std::string& key, const std::string& value) {
-        headers_ += key + ": " + value + "\r\n";
-    }
-    
-    void SetData(const StringPiece& data);
-    void SetData(const void* data, size_t size);
-    
-    void SetFile(const std::string& filepath);
-    void SetFile(int fd, size_t size);
-};
-
-class HttpRequest;
-class Context {
+class Context : public std::enable_shared_from_this<Context> {
 private:
     int index_ = -1;
     std::vector<ContextHandler> handlers_;
-    HttpRequest* request_;
-    Connection* connection_;
+    std::unique_ptr<HttpRequest> request_;
+    //shared 避免下层通道关闭后 上层无感知导致send空指针
+    std::shared_ptr<HttpSession> session_;
     std::unordered_map<std::string, std::string> params_;
-    
-    std::string generateBoundary(size_t len);
     
 public:
     friend class Router;
-    Context(Connection* conn, HttpRequest* req) : connection_(conn), request_(req) {}
-    ~Context() {delete request_;}
+    Context(std::shared_ptr<HttpSession> session, std::unique_ptr<HttpRequest> req) : session_(session), request_(std::move(req)) {}
     
     void Next() {
         ++index_;
         if(index_ < handlers_.size()) {
-            (handlers_[index_])(this);
+            (handlers_[index_])(shared_from_this());
         }
     }
     
@@ -63,20 +41,23 @@ public:
         handlers_.push_back(std::move(handler));
     }
     
-    std::string Method() const;
-    std::string Path() const;
-    std::string Query(const std::string& key) const;
-    std::string Param(const std::string& key);
-    std::string PostForm(const std::string& key) const;
-    //TODO
-    //FILE FormFile(const std::string& filename);
-    //void SaveUploadedFile(File file, const std::string& path);
+    const std::string& Method() const;
+    const std::string& Path() const;
+    const std::string& Query(const std::string& key) const;
+    const std::string& Param(const std::string& key);
+    const std::string& PostForm(const std::string& key) const;
+    MultipartPart* MultipartForm(const std::string& key) const;
+    const Json::Value& JsonValue() const;
+    const BinaryData& BinaryValue() const;
+    
+    std::shared_ptr<WebSocket> Upgrade() const;
+
+    void SaveUploadedFile(const BinaryData& file, const std::string& path, const std::string& filename);
     
     void STRING(HttpStatusCode code, const std::string& data);
     void JSON(HttpStatusCode code, const std::string& data);
     void FILE(HttpStatusCode code, const std::string& filepath, std::string filename = "");
-    
-    void MULTIPART(HttpStatusCode code, std::vector<MultipartPart*> parts);
+    void MULTIPART(HttpStatusCode code, const std::vector<MultipartPart*>& parts);
 };
 
 }

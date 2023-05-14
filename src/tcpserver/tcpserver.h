@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <boost/uuid/uuid_generators.hpp>
 #include "bytebuffer.h"
-#include "server.h"
+#include "tcpconnection.h"
 
 namespace cweb {
 namespace tcpserver {
@@ -18,29 +18,34 @@ class Socket;
 class Time;
 class TcpConnection;
 class Scheduler;
-class TcpServer : public Server {
+class TcpServer {
     
 protected:
-    EventLoop* accept_loop_ = nullptr;
-    Socket* accept_socket_ = nullptr;
-    Event* accept_event_ = nullptr;
-    Scheduler* scheduler_ = nullptr;
+    std::shared_ptr<EventLoop> accept_loop_;
+    std::unique_ptr<Socket> accept_socket_;
+    std::unique_ptr<Event> accept_event_;
+    std::unique_ptr<Scheduler> scheduler_;
     boost::uuids::random_generator random_generator_;
     
+    bool running_ = false;
+    std::unique_ptr<InetAddress> addr_;
+    TcpConnection::ConnectedCallback connected_callback_;
+    std::unordered_map<std::string, std::shared_ptr<TcpConnection>> living_connections_;
+    
     void handleAccept();
-    void handleConnectionClose(const Connection* conn);
-    void removeConnectionInLoop(const Connection* conn);
+    void handleConnectionClose(std::shared_ptr<TcpConnection> conn);
+    void removeConnectionInLoop(std::shared_ptr<TcpConnection> conn);
     void init();
     
 public:
-    TcpServer(EventLoop* loop, uint16_t port = 0, bool loopbackonly = false, bool ipv6 = false);
-    TcpServer(EventLoop* loop, const std::string& ip, uint16_t port, bool ipv6 = false);
+    TcpServer(std::shared_ptr<EventLoop> loop, uint16_t port = 0, bool loopbackonly = false, bool ipv6 = false);
+    TcpServer(std::shared_ptr<EventLoop> loop, const std::string& ip, uint16_t port, bool ipv6 = false);
     
     virtual ~TcpServer();
+    void SetConnectedCallback(TcpConnection::ConnectedCallback cb) {connected_callback_ = std::move(cb);}
     
-    virtual void Start(int threadcnt) override;
-    virtual void Quit() override;
-    
+    virtual void Start(int threadcnt);
+    virtual void Quit();
 };
 
 }

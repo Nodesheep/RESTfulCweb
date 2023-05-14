@@ -6,14 +6,14 @@ namespace cweb {
 namespace tcpserver {
 namespace coroutine {
 
-CoScheduler::CoScheduler(CoEventLoop* baseloop, int threadcnt)
+CoScheduler::CoScheduler(std::shared_ptr<CoEventLoop> baseloop, int threadcnt)
 : Scheduler(baseloop, threadcnt) {}
 
 void CoScheduler::Start() {
     for(int i = 0; i < threadcnt_; ++i) {
-        CoEventLoopThread* thread = new CoEventLoopThread();
+        std::unique_ptr<CoEventLoopThread> thread(new CoEventLoopThread());
         loops_.push_back(thread->StartLoop());
-        threads_.push_back(thread);
+        threads_.push_back(std::move(thread));
     }
 }
 

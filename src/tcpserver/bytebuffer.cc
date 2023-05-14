@@ -5,7 +5,7 @@ namespace cweb {
 namespace tcpserver {
 
 
-int ByteBuffer::ReadFd(int fd) {
+int ByteBuffer::Readv(int fd) {
     char extrabuf[65536];
     
     struct iovec vec[2];
@@ -19,7 +19,7 @@ int ByteBuffer::ReadFd(int fd) {
     
     int iovcnt = (writable < sizeof extrabuf) ? 2 : 1;
     
-    size_t n = readv(fd, vec, iovcnt);
+    ssize_t n = readv(fd, vec, iovcnt);
     
     if(n < 0) {
         return -1;
@@ -117,6 +117,20 @@ void ByteBuffer::extendSpace(size_t len) {
         readindex_ = kCheapPrepend;
         writeindex_ = readindex_ + readable;
     }
+}
+
+int ByteBuffer::ReadSome(void *data, size_t len) {
+    if(len <= 0 || ReadableBytes() < len) return 0;
+    memcpy(data, Peek(), len);
+    ReadBytes(len);
+    return (int)len;
+}
+
+int ByteBuffer::ReadToBuffer(ByteBuffer *buf, size_t len) {
+    if(len <= 0 || ReadableBytes() < len) return 0;
+    buf->Append(Peek(), len);
+    ReadBytes(len);
+    return (int)len;
 }
 
 }

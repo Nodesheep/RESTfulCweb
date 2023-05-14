@@ -14,34 +14,32 @@ using namespace cweb::tcpserver::coroutine;
 namespace cweb {
 
 #ifdef COROUTINE
-CoEventLoop mainloop;
+std::shared_ptr<EventLoop> mainloop(new CoEventLoop());
 #else
-EventLoop mainloop;
+std::shared_ptr<EventLoop> mainloop(new EventLoop());
 #endif
 
 Cweb::Cweb(uint16_t port, bool loopbackonly, bool ipv6) {
-    router_ = new Router();
-    httpserver_ = new HttpServer(&mainloop, port, loopbackonly, ipv6);
+    router_.reset(new Router());
+    httpserver_.reset(new HttpServer(mainloop, port, loopbackonly, ipv6));
     httpserver_->SetRequestCallback(std::bind(&Cweb::serverHTTP, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 Cweb::Cweb(const std::string& ip, uint16_t port, bool ipv6) {
-    router_ = new Router();
-    httpserver_ = new HttpServer(&mainloop, ip, port, ipv6);
+    router_.reset(new Router());
+    httpserver_.reset(new HttpServer(mainloop, ip, port, ipv6));
     httpserver_->SetRequestCallback(std::bind(&Cweb::serverHTTP, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 Cweb::~Cweb() {
     //有问题 线程join时被销毁
-    delete httpserver_;
-    delete router_;
     for(class Group* group : groups_) {
         delete group;
     }
 }
 
-void Cweb::serverHTTP(Connection* conn, HttpRequest* req) {
-    Context* c = new Context(conn, req);
+void Cweb::serverHTTP(std::shared_ptr<HttpSession> session, std::unique_ptr<HttpRequest> req) {
+    std::shared_ptr<Context> c = std::make_shared<Context>(session, std::move(req));
     
     //全局中间件
     for(ContextHandler handler : global_handlers_) {
@@ -58,7 +56,6 @@ void Cweb::serverHTTP(Connection* conn, HttpRequest* req) {
     }
     
     router_->Handle(c);
-    delete c;
 }
 
 void Cweb::Run(int threadcnt) {

@@ -16,7 +16,7 @@ class Event;
 class Timer;
 class Time;
 class TimerManager;
-class EventLoop {
+class EventLoop : public std::enable_shared_from_this<EventLoop> {
 
 public:
     typedef std::function<void()> Functor;
@@ -38,10 +38,10 @@ public:
 
 protected:
     bool running_ = false;
-    Poller* poller_;
-    util::MemoryPool* memorypool_;
+    std::unique_ptr<Poller> poller_;
+    std::unique_ptr<util::MemoryPool> memorypool_;
     std::mutex mutex_;
-    TimerManager* timermanager_;
+    std::unique_ptr<TimerManager> timermanager_;
     std::vector<Event*> active_events_;
     
     void loop();
@@ -58,7 +58,7 @@ private:
     std::vector<Timer*> timeout_timers_;
     
     int wakeup_fd_[2];
-    Event* wakeup_event_;
+    std::unique_ptr<Event> wakeup_event_;
     pthread_t tid_;
     
 };

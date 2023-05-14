@@ -115,7 +115,7 @@ void ByteData::modifyIndexAndOffset() {
         }
     }
     current_index_ = size - 1;
-    offset_ = datas_[current_index_]->size_;
+    offset_ = (int)datas_[current_index_]->size_;
     return;
 }
 

@@ -11,34 +11,38 @@ using namespace cweb::log;
 namespace cweb {
 namespace tcpserver {
 
-TcpConnection::TcpConnection(EventLoop* loop, Socket* socket, InetAddress* addr, const std::string& id)
+TcpConnection::TcpConnection(std::shared_ptr<EventLoop> loop, Socket* socket, InetAddress* addr, const std::string& id)
 : ownerloop_(loop),
-  socket_(socket),
-  Connection(addr, id) {}
+socket_(socket),
+iaddr_(addr),
+id_(id),
+outputbuffer_(new ByteBuffer()),
+inputbuffer_(new ByteBuffer()) {}
 
 TcpConnection::~TcpConnection() {
+    while(send_datas_.size()) {
+        ByteData* data = send_datas_.front();
+        send_datas_.pop();
+        delete data;
+    }
+    
     if(connect_state_ == CONNECT) {
         handleClose();
     }
-    
-    delete event_;
-    delete socket_;
 }
 
 void TcpConnection::handleRead(Time time) {
     LOG(LOGLEVEL_INFO, CWEB_MODULE, "tcpconnection", "conn: %s 获取数据", id_.c_str());
-    if(timeout_timer_) {
-        ownerloop_->RemoveTimer(timeout_timer_);
-        timeout_timer_ = nullptr;
-    }
     
-    ssize_t n = socket_->Read((void*)inputbuffer_->Back(), inputbuffer_->WritableBytes());
+    cancelTimer();
+    
+    ssize_t n = inputbuffer_->Readv(socket_->Fd());
     if(n > 0) {
-        inputbuffer_->WriteBytes(n);
         if(message_callback_) {
-            message_callback_(this, inputbuffer_, time);
+            message_callback_(shared_from_this(), inputbuffer_.get(), time);
         }
-        timeout_timer_ = ownerloop_->AddTimer(60, std::bind(&TcpConnection::handleTimeout, this));
+        //外部forceclose了就不需要再添加定时器
+        resumeTimer();
     }else if(n == 0) {
         LOG(LOGLEVEL_INFO, CWEB_MODULE, "tcpconnection", "conn: %s 对端主动关闭", id_.c_str());
         handleClose();
@@ -65,23 +69,22 @@ void TcpConnection::handleWrite() {
 
 void TcpConnection::handleClose() {
     connect_state_ = CLOSED;
-    for(CloseCallback handler : close_handlers_) {
-        handler(this);
-    }
-    
-    if(timeout_timer_) {
-        ownerloop_->RemoveTimer(timeout_timer_);
-        timeout_timer_ = nullptr;
-    }
-    
+    cancelTimer();
     event_->DisableAll();
     event_->Remove();
-    close_callback_(this);
+    connected_callback_(shared_from_this());
+    close_callback_(shared_from_this());
 }
 
 void TcpConnection::handleTimeout() {
     LOG(LOGLEVEL_INFO, CWEB_MODULE, "tcpconnection", "连接超时，socketfd: %d, id: %s", socket_->Fd() ,id_.c_str());
     handleClose();
+}
+
+void TcpConnection::Send(const void *data, size_t size) {
+    ByteData* bdata = new ByteData();
+    bdata->AddDataZeroCopy(data, size);
+    Send(bdata);
 }
 
 void TcpConnection::Send(ByteData *data) {
@@ -90,6 +93,10 @@ void TcpConnection::Send(ByteData *data) {
     }else {
         ownerloop_->AddTask(std::bind(&TcpConnection::sendInLoop, this, data));
     }
+}
+
+ssize_t TcpConnection::Recv(ByteBuffer* buf) {
+    return buf->Readv(socket_->Fd());
 }
 
 void TcpConnection::sendInLoop(ByteData *data) {
@@ -108,14 +115,44 @@ void TcpConnection::sendInLoop(ByteData *data) {
     }
 }
 
+void TcpConnection::ForceClose() {
+    if(connect_state_ != CLOSED) {
+        if(ownerloop_->isInLoopThread()) {
+            forceCloseInLoop();
+        }else {
+            ownerloop_->AddTask(std::bind(&TcpConnection::forceCloseInLoop, this));
+        }
+    }
+}
+
+void TcpConnection::forceCloseInLoop() {
+    if(connect_state_ != CLOSED) {
+        handleClose();
+    }
+}
+
 void TcpConnection::connectEstablished() {
-    event_ = new Event(ownerloop_, socket_->Fd());
+    event_ .reset(new Event(ownerloop_, socket_->Fd(), true));
     event_->SetReadCallback(std::bind(&TcpConnection::handleRead, this, std::placeholders::_1));
     event_->SetWriteCallback(std::bind(&TcpConnection::handleWrite, this));
     event_->EnableReading();
-    timeout_timer_ = ownerloop_->AddTimer(60, std::bind(&TcpConnection::handleTimeout, this));
     connect_state_ = CONNECT;
+    resumeTimer();
+    connected_callback_(shared_from_this());
     LOG(LOGLEVEL_INFO, CWEB_MODULE, "tcpconnection", "conn: %s established", id_.c_str());
+}
+
+void TcpConnection::cancelTimer() {
+    if(timeout_timer_ != nullptr) {
+        ownerloop_->RemoveTimer(timeout_timer_);
+        timeout_timer_ = nullptr;
+    }
+}
+
+void TcpConnection::resumeTimer() {
+    if(connect_state_ == Connected()) {
+        timeout_timer_ = ownerloop_->AddTimer(10, std::bind(&TcpConnection::handleTimeout, this));
+    }
 }
 
 /*

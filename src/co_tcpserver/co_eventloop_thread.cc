@@ -5,7 +5,7 @@ namespace cweb {
 namespace tcpserver {
 namespace coroutine {
 
-EventLoop* CoEventLoopThread::StartLoop() {
+std::shared_ptr<EventLoop>  CoEventLoopThread::StartLoop() {
     stop_ = false;
     pthread_create(&tid_, NULL, cothreadFunc, this);
     
@@ -26,14 +26,14 @@ void* CoEventLoopThread::cothreadFunc(void *arg) {
 }
 
 void CoEventLoopThread::createLoopAndRun() {
-    CoEventLoop loop;
+    std::shared_ptr<CoEventLoop>loop(new CoEventLoop());
     
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        loop_ = &loop;
+        loop_ = loop;
         cond_.notify_all();
     }
-    loop.Run();
+    loop->Run();
 }
 
 }

@@ -43,6 +43,10 @@ ssize_t io_handler(int fd, OriginFun fun, int type, Args&&... args) {
         return fun(fd, std::forward<Args>(args)...);
     }
     
+    if(!event->IsSocket()) {
+        return fun(fd, std::forward<Args>(args)...);
+    }
+    
     if(event->Flags() & O_NONBLOCK) {
         ssize_t n = fun(fd, std::forward<Args>(args)...);
         while(n == -1 && errno == EINTR) {
@@ -57,7 +61,7 @@ ssize_t io_handler(int fd, OriginFun fun, int type, Args&&... args) {
     }
 
 block:
-    Timer* timer = TLSCoEventLoop->AddTimer(60, [event](){
+    Timer* timer = TLSCoEventLoop->AddTimer(10, [event](){
         event->HandleTimeout();
     });
     
@@ -77,7 +81,7 @@ block:
     TLSCoEventLoop->GetCurrentCoroutine()->SwapTo(TLSCoEventLoop->GetMainCoroutine());
     
     //TODO 考虑timer事件和读写事件同时入队列的情况
-    if(timer) {
+    if(timer && !event->Triggred()) {
         TLSCoEventLoop->RemoveTimer(timer);
     }
     

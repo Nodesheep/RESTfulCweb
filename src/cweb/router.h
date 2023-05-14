@@ -9,7 +9,7 @@
 namespace cweb {
 
 class Context;
-typedef std::function<void(Context*)> ContextHandler;
+typedef std::function<void(std::shared_ptr<Context>)> ContextHandler;
 class Node {
 private:
     std::string pattern_;
@@ -168,7 +168,7 @@ public:
     
     void AddRouter(const std::string& method, const std::string& pattern, ContextHandler handler);
     
-    void Handle(Context *c);
+    void Handle(std::shared_ptr<Context> c);
 };
 
 

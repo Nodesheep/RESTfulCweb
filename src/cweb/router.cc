@@ -16,8 +16,8 @@ void Router::AddRouter(const std::string &method, const std::string &pattern, Co
     roots_[method]->Insert(pattern, handler);
 }
 
-void Router::Handle(Context *c) {
-    if(findRoute(c)) {
+void Router::Handle(std::shared_ptr<Context> c) {
+    if(findRoute(c.get())) {
         LOG(LOGLEVEL_INFO, CWEB_MODULE, "router", "请求命中路由: %s", c->Path().c_str());
         c->Next();
     }else {

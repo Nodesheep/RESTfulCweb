@@ -15,13 +15,17 @@ protected:
     void handleMessage();
     void handleClose();
     void handleTimeout();
+    void forceCloseInLoop();
     
 public:
     friend class CoTcpServer;
-    CoTcpConnection(CoEventLoop* loop, Socket* socket, InetAddress* addr, const std::string& id);
+    CoTcpConnection(std::shared_ptr<CoEventLoop> loop, Socket* socket, InetAddress* addr, const std::string& id);
     virtual ~CoTcpConnection();
 
+    virtual void ForceClose() override;
+    virtual void Send(const void* data, size_t size) override;
     virtual void Send(ByteData* data) override;
+    virtual ssize_t Recv(ByteBuffer* buf) override;
 };
     
 }

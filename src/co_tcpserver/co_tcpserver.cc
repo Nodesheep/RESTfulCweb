@@ -14,10 +14,10 @@ namespace cweb {
 namespace tcpserver {
 namespace coroutine {
 
-CoTcpServer::CoTcpServer(CoEventLoop* loop, uint16_t port, bool loopbackonly, bool ipv6)
+CoTcpServer::CoTcpServer(std::shared_ptr<EventLoop> loop, uint16_t port, bool loopbackonly, bool ipv6)
 : TcpServer(loop, port, loopbackonly, ipv6) {}
 
-CoTcpServer::CoTcpServer(CoEventLoop* loop, const std::string& ip, uint16_t port, bool ipv6)
+CoTcpServer::CoTcpServer(std::shared_ptr<EventLoop> loop, const std::string& ip, uint16_t port, bool ipv6)
 : TcpServer(loop, ip, port, ipv6) {}
 
 CoTcpServer::~CoTcpServer() {
@@ -27,7 +27,7 @@ CoTcpServer::~CoTcpServer() {
 void CoTcpServer::Start(int threadcnt) {
     init();
     running_ = true;
-    scheduler_ = new CoScheduler((CoEventLoop*)accept_loop_, threadcnt);
+    scheduler_.reset(new CoScheduler(std::dynamic_pointer_cast<CoEventLoop>(accept_loop_), threadcnt));
     scheduler_->Start();
     accept_socket_->Listen();
     accept_event_->EnableReading();
@@ -35,8 +35,8 @@ void CoTcpServer::Start(int threadcnt) {
 }
 
 void CoTcpServer::init() {
-    accept_socket_ = Socket::CreateFdAndBind(addr_, true);
-    accept_event_ =  new CoEvent((CoEventLoop*)accept_loop_, accept_socket_->Fd());
+    accept_socket_.reset(Socket::CreateFdAndBind(addr_.get(), true));
+    accept_event_.reset(new CoEvent(std::dynamic_pointer_cast<CoEventLoop>(accept_loop_), accept_socket_->Fd()));
     accept_event_->SetReadCallback(std::bind(&CoTcpServer::handleAccept, this));
 }
 
@@ -55,26 +55,26 @@ void CoTcpServer::handleAccept() {
         }
         
         socket->SetNonBlock();
-        CoEventLoop* loop = (CoEventLoop*)scheduler_->GetNextLoop();
+        std::shared_ptr<CoEventLoop> loop = std::dynamic_pointer_cast<CoEventLoop>(scheduler_->GetNextLoop());
+        //底层会调用read
         std::string id = boost::uuids::to_string(random_generator_());
-        
-        CoTcpConnection* conn = new CoTcpConnection(loop, socket, peeraddr, id);
+        std::shared_ptr<CoTcpConnection> conn = std::make_shared<CoTcpConnection>(loop, socket, peeraddr, id);
         LOG(LOGLEVEL_INFO, CWEB_MODULE, "cotcpserver", "创建连接，connfd: %d, id: %s", connfd, id.c_str());
-        conn->close_callback_ = std::bind(&CoTcpServer::handleConnectionClose, this, std::placeholders::_1);
-        conn->message_callback_ = message_callback_;
+        conn->SetCloseCallback(std::bind(&CoTcpServer::handleConnectionClose, this, std::placeholders::_1));
+        conn->SetConnectedCallback(connected_callback_);
         living_connections_[id] = conn;
-        loop->AddTask(std::bind(&CoTcpConnection::handleMessage, conn));
+        //bind不要持有conn，若持有会导致超时事件发生后conn无法被回收，因为handleMessage是一个循环
+        loop->AddTask(std::bind(&CoTcpConnection::handleMessage, conn.get()));
     }
 }
 
-void CoTcpServer::handleConnectionClose(const Connection *conn) {
+void CoTcpServer::handleConnectionClose(std::shared_ptr<TcpConnection> conn) {
     accept_loop_->AddTask(std::bind(&CoTcpServer::removeConnectionInLoop, this, conn));
 }
 
-void CoTcpServer::removeConnectionInLoop(const Connection *conn) {
-    LOG(LOGLEVEL_INFO, CWEB_MODULE, "cotcpserver", "移出连接，id: %s", ((CoTcpConnection*)conn)->id_.c_str());
-    living_connections_.erase(((CoTcpConnection*)conn)->id_);
-    delete (CoTcpConnection*)conn;
+void CoTcpServer::removeConnectionInLoop(std::shared_ptr<TcpConnection> conn) {
+    LOG(LOGLEVEL_INFO, CWEB_MODULE, "cotcpserver", "移出连接，id: %s", std::dynamic_pointer_cast<CoTcpConnection>(conn) ->id_.c_str());
+    living_connections_.erase(std::dynamic_pointer_cast<CoTcpConnection>(conn) ->id_);
 }
 
 }

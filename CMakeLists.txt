@@ -20,21 +20,25 @@ file(GLOB SOURCES
     "src/tcpserver/base/*.cc"
     "src/util/*.cc"
     "src/cweb/*.cc"
-    "src/cweb/jsoncpp/*.cc"
     "src/log/*.cc"
+    "src/httpserver/*.cc"
+    "src/util/json/*.cc"
 )
 
 include_directories(
   src
   src/co_tcpserver
+  src/httpserver
   src/tcpserver
   src/tcpserver/poll
   src/tcpserver/epoll
   src/tcpserver/kqueue
   src/tcpserver/base
   src/util
+  src/util/encode
+  src/util/encrypt
+  src/util/json
   src/cweb
-  src/cweb/jsoncpp
   src/log
   thirdparty/boost/1.79.0_1/include
 )

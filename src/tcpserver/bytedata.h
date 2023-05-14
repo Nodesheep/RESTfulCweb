@@ -51,7 +51,7 @@ class ByteData {
 private:
     std::vector<DataPacket*> datas_;
     size_t current_index_ = 0;
-    size_t offset_ = 0;
+    int offset_ = 0;
     
     void modifyIndexAndOffset();
     

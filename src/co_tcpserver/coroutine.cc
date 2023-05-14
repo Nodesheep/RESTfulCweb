@@ -7,14 +7,14 @@ namespace cweb {
 namespace tcpserver {
 namespace coroutine {
 
-static const size_t kCoroutineContextSize = 40 * 1024;
+static const size_t kCoroutineContextSize = 4096 * 1024;
 
 void Coroutine::coroutineFunc(void *vp) {
     Coroutine* co = (Coroutine*)vp;
     co->run();
 }
 
-Coroutine::Coroutine(std::function<void()> func, CoEventLoop* loop) : func_(std::move(func)), context_(new CoroutineContext(kCoroutineContextSize, coroutineFunc, this)), loop_(loop) {}
+Coroutine::Coroutine(std::function<void()> func, std::shared_ptr<CoEventLoop> loop) : func_(std::move(func)), context_(new CoroutineContext(kCoroutineContextSize, coroutineFunc, this)), loop_(loop) {}
 
 Coroutine::~Coroutine() {
     delete context_;

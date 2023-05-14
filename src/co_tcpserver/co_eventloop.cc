@@ -15,8 +15,9 @@ Coroutine* CoEventLoop::GetMainCoroutine() {
 
 void CoEventLoop::Run() {
     running_ = true;
+    createWakeupfd();
     pthread_setspecific(util::PthreadKeysSingleton::GetInstance()->TLSEventLoop, this);
-    pthread_setspecific(util::PthreadKeysSingleton::GetInstance()->TLSMemoryPool, memorypool_);
+    pthread_setspecific(util::PthreadKeysSingleton::GetInstance()->TLSMemoryPool, memorypool_.get());
     main_coroutine_ = new Coroutine(std::bind(&CoEventLoop::loop, this));
     loop();
 }
@@ -83,7 +84,12 @@ void CoEventLoop::RemoveEvent(Event *event) {
 }
 
 CoEvent* CoEventLoop::GetEvent(int fd) {
-    return (CoEvent*)events_[fd];
+    if(fd < 0) return nullptr;
+    auto iter = events_.find(fd);
+    if(iter != events_.end()) {
+        return (CoEvent*)events_[fd];
+    }
+    return nullptr;
 }
 
 Coroutine* CoEventLoop::GetCurrentCoroutine() {
@@ -114,7 +120,7 @@ void CoEventLoop::loop() {
         }
         
         while(running_coroutine_ && running_) {
-            running_coroutine_->SetLoop(this);
+            running_coroutine_->SetLoop(std::dynamic_pointer_cast<CoEventLoop>(shared_from_this()));
             main_coroutine_->SwapTo(running_coroutine_);
             switch (running_coroutine_->State()) {
                 case Coroutine::State::EXEC: {

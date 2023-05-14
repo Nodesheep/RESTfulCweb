@@ -5,7 +5,7 @@
 namespace cweb {
 namespace tcpserver {
 
-Scheduler::Scheduler(EventLoop* baseloop, int threadcnt) : baseloop_(baseloop), threadcnt_(threadcnt) {}
+Scheduler::Scheduler(std::shared_ptr<EventLoop> baseloop, int threadcnt) : baseloop_(baseloop), threadcnt_(threadcnt) {}
 
 Scheduler::~Scheduler() {
     //不要回收loop 外部创建的临时变量
@@ -13,19 +13,19 @@ Scheduler::~Scheduler() {
 
 void Scheduler::Start() {
     for(int i = 0; i < threadcnt_; ++i) {
-        EventLoopThread* thread = new EventLoopThread();
+        std::unique_ptr<EventLoopThread> thread(new EventLoopThread());
         loops_.push_back(thread->StartLoop());
-        threads_.push_back(thread);
+        threads_.push_back(std::move(thread));
     }
 }
 
 void Scheduler::Stop() {
-    for (EventLoop* loop : loops_) {
+    for (auto loop : loops_) {
         loop->Quit();
     }
 }
 
-EventLoop* Scheduler::GetNextLoop() {
+std::shared_ptr<EventLoop> Scheduler::GetNextLoop() {
     ++next_;
     next_ %= threadcnt_;
     //单线程

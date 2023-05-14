@@ -18,25 +18,21 @@ namespace tcpserver {
 EventLoop::EventLoop()
 :tid_(pthread_self()) {
 #ifdef KQUEUE
-    poller_ = new KqueuePoller(this);
+    poller_.reset(new KqueuePoller(this));
 #elif EPOLL
-    poller_ = new EPollPoller(this);
+    poller_.reset(new EPollPoller(this));
 #else
-    poller_ = new PollPoller(this);
+    poller_.reset(new PollPoller(this));
 #endif
-    timermanager_ = new TimerWheelManager();
-    memorypool_ = new util::MemoryPool();
-    createWakeupfd();
+    timermanager_.reset(new TimerWheelManager());
+    memorypool_.reset(new util::MemoryPool());
 }
 
-EventLoop::~EventLoop() {
-    delete poller_;
-    delete memorypool_;
-    delete timermanager_;
-}
+EventLoop::~EventLoop() {}
 
 void EventLoop::Run() {
-    pthread_setspecific(util::PthreadKeysSingleton::GetInstance()->TLSMemoryPool, memorypool_);
+    createWakeupfd();
+    pthread_setspecific(util::PthreadKeysSingleton::GetInstance()->TLSMemoryPool, memorypool_.get());
     running_ = true;
     loop();
 }
@@ -131,7 +127,7 @@ void EventLoop::handleTimeoutTimers() {
 
 void EventLoop::createWakeupfd() {
     ::pipe(wakeup_fd_);
-    wakeup_event_ = new Event(this, wakeup_fd_[0]);
+    wakeup_event_.reset(new Event(shared_from_this(), wakeup_fd_[0]));
     wakeup_event_->EnableReading();
     wakeup_event_->SetReadCallback(std::bind(&EventLoop::handleWakeup, this));
 }
