@@ -19,8 +19,6 @@ private:
     int capacity_;
     
 public:
-    //模版类的实现与声明需都放在h文件中
-    //能不能存智能指针？
     LockfreeQueue<T>(int capacity = 100) : capacity_(capacity), data_(std::vector<T>(capacity)){}
     LockfreeQueue<T>(const LockfreeQueue<T>& queue) {
         capacity_ = queue.capacity_;

@@ -225,7 +225,7 @@ void TcpConnection::sendBufferInLoop(util::ByteBuffer *buffer) {
 void TcpConnection::handleWrite() {
     //不允许sendstream与另两种send方法混用
     if(event_ && event_->Writable()) {
-        //LOG(LOGLEVEL_WARN, CWEB_MODULE, "tcpconnection", "conn: %s 响应数据", id_.c_str());
+        LOG(LOGLEVEL_WARN, CWEB_MODULE, "tcpconnection", "conn: %s 响应数据", id_.c_str());
         if(!current_stream_ && stream_queue_.size() == 0) {
             size_t n = socket_->Write((void*)outputbuffer_->Peek(), outputbuffer_->ReadableBytes());
             if(n > 0) {

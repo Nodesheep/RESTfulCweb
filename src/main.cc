@@ -5,8 +5,14 @@
 #include "logger.h"
 #include "websocket.h"
 
+#include "redis.h"
+#include "mysql.h"
+#include <iostream>
+
 using namespace cweb;
 using namespace cweb::log;
+using namespace cweb::db;
+
 
 int main() {
     //环境初始化
@@ -104,6 +110,36 @@ int main() {
         delete part3;
     });
     
+    //mysql
+    c.GET("/api/mysql/data", [](std::shared_ptr<Context> c) {
+        MySQLReplyPtr r = c->MySQL()->Cmd("SELECT * FROM person");
+        int rows = r->Rows();
+        Json::Value root;
+        root["cout"] = rows;
+        for(int i = 0; i < rows; ++i) {
+            r->Next();
+            Json::Value p;
+            p["id"] = r->IntValue(0);
+            p["name"] = r->StringValue(1);
+            p["age"] = r->IntValue(2);
+            root["people"].append(p);
+        }
+        
+        std::stringstream body;
+        Json::StreamWriterBuilder writerBuilder;
+        writerBuilder["emitUTF8"] = true;
+        std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
+        jsonWriter->write(root, &body);
+
+        LOG(LOGLEVEL_DEBUG, CWEB_MODULE, "mysql", "mysql res: %s", body.str().c_str());
+        c->JSON(StatusOK, body.str());
+    });
+    
+    //redis
+    c.GET("/api/redis/data", [](std::shared_ptr<Context> c) {
+        RedisReplyPtr r = c->Redis()->Cmd("GET key_htl_hlea_tlyyyy_ghhtl_aseghlea");
+        c->STRING(StatusOK, r->str);
+    });
     
     //分组路由
     Group* g1 = c.Group("/group");
@@ -155,3 +191,4 @@ int main() {
     c.Run(2);
     return 0;
 }
+

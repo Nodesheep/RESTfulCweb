@@ -10,10 +10,13 @@
 #include "httpserver.h"
 #include "httprequest.h"
 #include "websocket.h"
+#include "redis.h"
+#include "mysql.h"
 
 using namespace cweb::tcpserver;
 using namespace cweb::httpserver;
 using namespace cweb::util;
+using namespace cweb::db;
 
 namespace cweb {
 
@@ -25,10 +28,13 @@ private:
     //shared 避免下层通道关闭后 上层无感知导致send空指针
     std::shared_ptr<HttpSession> session_;
     std::unordered_map<std::string, std::string> params_;
+    std::shared_ptr<Redis> redis_ = nullptr;
+    std::shared_ptr<MySQL> mysql_ = nullptr;
     
 public:
     friend class Router;
     Context(std::shared_ptr<HttpSession> session, std::unique_ptr<HttpRequest> req) : session_(session), request_(std::move(req)) {}
+    ~Context();
     
     void Next() {
         ++index_;
@@ -49,6 +55,9 @@ public:
     MultipartPart* MultipartForm(const std::string& key) const;
     const Json::Value& JsonValue() const;
     const BinaryData& BinaryValue() const;
+    
+    std::shared_ptr<Redis> Redis();
+    std::shared_ptr<MySQL> MySQL();
     
     std::shared_ptr<WebSocket> Upgrade() const;
 

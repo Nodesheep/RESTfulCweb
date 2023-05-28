@@ -1,6 +1,9 @@
 #include "cweb.h"
 #include "context.h"
 #include "httpserver.h"
+#include "redis.h"
+#include "mysql.h"
+#include "logger.h"
 #ifdef COROUTINE
 #include "co_eventloop.h"
 #else
@@ -11,6 +14,9 @@
 using namespace cweb::tcpserver::coroutine;
 #endif
 
+using namespace cweb::db;
+using namespace cweb::log;
+
 namespace cweb {
 
 #ifdef COROUTINE
@@ -20,19 +26,25 @@ std::shared_ptr<EventLoop> mainloop(new EventLoop());
 #endif
 
 Cweb::Cweb(uint16_t port, bool loopbackonly, bool ipv6) {
+    LoggerManagerSingleton::GetInstance();
+    assert(RedisPoolSingleton::GetInstance()->Init());
+    assert(MySQLPoolSingleton::GetInstance()->Init());
+    LoggerManagerSingleton::GetInstance();
     router_.reset(new Router());
     httpserver_.reset(new HttpServer(mainloop, port, loopbackonly, ipv6));
     httpserver_->SetRequestCallback(std::bind(&Cweb::serverHTTP, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 Cweb::Cweb(const std::string& ip, uint16_t port, bool ipv6) {
+    LoggerManagerSingleton::GetInstance();
+    assert(RedisPoolSingleton::GetInstance()->Init());
+    assert(MySQLPoolSingleton::GetInstance()->Init());
     router_.reset(new Router());
     httpserver_.reset(new HttpServer(mainloop, ip, port, ipv6));
     httpserver_->SetRequestCallback(std::bind(&Cweb::serverHTTP, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 Cweb::~Cweb() {
-    //有问题 线程join时被销毁
     for(class Group* group : groups_) {
         delete group;
     }

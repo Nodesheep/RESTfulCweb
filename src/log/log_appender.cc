@@ -17,7 +17,7 @@ void ConsoleAppender::Log(LogInfo *logInfo) {
     
 }
 
-FileAppender::FileAppender(LogFormatter* formatter, LogWriter* writer, const std::string& module) : LogAppender(formatter), writer_(writer), module_(module) {
+FileAppender::FileAppender(LogFormatter* formatter, LogWriter* writer, const std::string& module, const std::string& filepath) : LogAppender(formatter), writer_(writer), module_(module), filepath_(filepath) {
     logging_pipe_ = new LogfilePipe(kMaxLogCapacity);
     createFilepath();
     ofs_.open(filepath_, std::ofstream::out | std::ofstream::app);
@@ -46,7 +46,7 @@ bool FileAppender::createFilepath() {
     time_t seconds = tv.tv_sec;
     struct tm* tm = localtime(&seconds);
     strftime(timeStr, 20, "%Y-%m-%d", tm);
-    std::string filepath = "../logfile/LOG_" + std::string(timeStr) + "_" + module_ + ".txt";
+    std::string filepath = filepath_ + "/LOG_" + std::string(timeStr) + "_" + module_ + ".txt";
 
     if(filepath_.compare(filepath) != 0) {
         filepath_ = filepath;

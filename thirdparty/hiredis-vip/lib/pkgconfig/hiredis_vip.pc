@@ -1,0 +1,10 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=/usr/local/lib
+includedir=/usr/local/include/hiredis-vip
+
+Name: hiredis-vip
+Description: Minimalistic C client library for Redis and Redis Cluster.
+Version: 1.0.0
+Libs: -L${libdir} -lhiredis_vip
+Cflags: -I${includedir} -D_FILE_OFFSET_BITS=64

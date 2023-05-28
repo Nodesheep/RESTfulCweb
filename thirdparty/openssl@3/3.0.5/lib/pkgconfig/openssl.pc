@@ -1,9 +1,0 @@
-prefix=/usr/local/Cellar/openssl@3/3.0.5
-exec_prefix=${prefix}
-libdir=/usr/local/Cellar/openssl@3/3.0.5/lib
-includedir=${prefix}/include
-
-Name: OpenSSL
-Description: Secure Sockets Layer and cryptography libraries and tools
-Version: 3.0.5
-Requires: libssl libcrypto

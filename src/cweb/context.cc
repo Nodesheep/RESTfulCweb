@@ -7,6 +7,16 @@
 
 namespace cweb {
 
+Context::~Context() {
+    if(redis_) {
+        RedisPoolSingleton::GetInstance()->ReleaseConnection(redis_);
+    }
+    
+    if(mysql_) {
+        MySQLPoolSingleton::GetInstance()->ReleaseConnection(mysql_);
+    }
+}
+
 const std::string& Context::Method() const {
     return request_->Method();
 }
@@ -49,6 +59,18 @@ void Context::SaveUploadedFile(const BinaryData &file, const std::string &path, 
     ofs.open(path + filename, std::ofstream::out | std::ofstream::app);
     ofs.write(file.data, file.size);
     ofs.close();
+}
+
+std::shared_ptr<Redis> Context::Redis() {
+    if(redis_) return redis_;
+    redis_ = RedisPoolSingleton::GetInstance()->GetConnection();
+    return redis_;
+}
+
+std::shared_ptr<MySQL> Context::MySQL() {
+    if(mysql_) return mysql_;
+    mysql_ = MySQLPoolSingleton::GetInstance()->GetConnection();
+    return mysql_;
 }
 
 std::shared_ptr<WebSocket> Context::Upgrade() const {

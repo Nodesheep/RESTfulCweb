@@ -63,7 +63,6 @@ void CoTcpServer::handleAccept() {
         conn->SetCloseCallback(std::bind(&CoTcpServer::handleConnectionClose, this, std::placeholders::_1));
         conn->SetConnectedCallback(connected_callback_);
         living_connections_[id] = conn;
-        //bind不要持有conn，若持有会导致超时事件发生后conn无法被回收，因为handleMessage是一个循环
         loop->AddTask(std::bind(&CoTcpConnection::handleMessage, conn.get()));
     }
 }

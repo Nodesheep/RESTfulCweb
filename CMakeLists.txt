@@ -23,6 +23,7 @@ file(GLOB SOURCES
     "src/log/*.cc"
     "src/httpserver/*.cc"
     "src/util/json/*.cc"
+    "src/db/*.cc"
 )
 
 include_directories(
@@ -40,10 +41,17 @@ include_directories(
   src/util/json
   src/cweb
   src/log
-  thirdparty/boost/1.79.0_1/include
+  src/db
+  thirdparty/hiredis-vip/include
+  /usr/local/include
 )
 
-link_directories(${BOOST_LIBRARYDIR})
+link_directories(
+  thirdparty/hiredis-vip/lib
+  /usr/local/lib
+)
+
+# find_library(HIREDIS_LIB NAMES hiredis_vip PATHS thirdparty/hiredis-vip/lib)
 
 if(BUILD_FLAG STREQUAL TKQUEUE)
   add_definitions(-DKQUEUE)
@@ -107,6 +115,7 @@ else()
   )
   add_executable(CWEBSERVER ${SOURCES})
 endif()
-
+  target_link_libraries(CWEBSERVER hiredis_vip mysqlclient)
+    
 
 

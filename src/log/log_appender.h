@@ -57,7 +57,7 @@ private:
     void writeLogsfile();
 
 public:
-    FileAppender(LogFormatter* formatter, LogWriter* writer, const std::string& module);
+    FileAppender(LogFormatter* formatter, LogWriter* writer, const std::string& module, const std::string& filepath = "../logfile");
     virtual ~FileAppender();
     virtual void Log(LogInfo* logInfo) override;
 

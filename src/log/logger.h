@@ -12,6 +12,7 @@
 #include "log_formatter.h"
 #include "log_writer.h"
 #include "singleton.h"
+#include "cweb_config.h"
 
 namespace cweb {
 namespace log {
@@ -19,7 +20,7 @@ namespace log {
 class Logger {
 public:
 
-    Logger(const std::string& module = "root", LogWriter* writer = nullptr);
+    Logger(const std::string& module = "root", LogWriter* writer = nullptr, LogLevel loglevel = LOGLEVEL_DEBUG);
     ~Logger();
 
     void Log(LogLevel level, const std::string& module, const std::string& tag, const char *format, ...);
@@ -30,7 +31,7 @@ private:
     const std::string module_;
     std::vector<LogAppender*> appenders_;
     LogWriter* writer_ = nullptr;
-    LogLevel log_level_ = LOGLEVEL_INFO;
+    LogLevel log_level_ = LOGLEVEL_DEBUG;
     
     void log(LogLevel level, LogInfo* loginfo);
 
@@ -51,6 +52,8 @@ private:
     std::unordered_map<std::string, Logger*> loggers_;
     std::mutex mutex_;
     std::thread writer_thread_;
+    
+    LogConfig config_;
 };
 
 typedef cweb::util::Singleton<LoggerManager> LoggerManagerSingleton;
