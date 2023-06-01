@@ -1,4 +1,5 @@
 #include "inetaddress.h"
+#include <cstring>
 
 namespace cweb {
 namespace tcpserver {

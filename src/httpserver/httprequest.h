@@ -3,6 +3,8 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <cassert>
 #include "bytebuffer.h"
 #include "json.h"
 #include "multipartparser.h"

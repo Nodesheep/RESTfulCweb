@@ -1,6 +1,7 @@
 #include "httprequest.h"
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <algorithm>
 
 namespace cweb {
 namespace httpserver {

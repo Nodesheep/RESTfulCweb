@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include <mutex>
+#include <functional>
 
 #include "priority_queue.h"
 #include "linked_list.h"

@@ -4,6 +4,7 @@
 #include "hooks.h"
 #include <fcntl.h>
 #include <unistd.h>
+#include <cstring>
 
 static const int kMaxConnCount = 128;
 namespace cweb {

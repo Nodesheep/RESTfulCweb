@@ -27,8 +27,8 @@ public:
     virtual int AppendCmd(const char* fmt, ...);
     virtual RedisReplyPtr GetReply();
     
-    //virtual std::string Lock(const std::string& key, uint64_t ms);
-    //virtual bool Unlock(const std::string& key, const std::string& value);
+    std::string Lock(const std::string& key, uint64_t ms);
+    bool Unlock(const std::string& key, const std::string& value);
 };
 
 class RedisCluster : public Redis {

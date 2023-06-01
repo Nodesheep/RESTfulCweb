@@ -2,6 +2,7 @@
 #define CWEB_TCP_SCHEDULER_H_
 
 #include <vector>
+#include <memory>
 #include "noncopyable.h"
 
 namespace cweb {

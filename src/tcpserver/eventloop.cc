@@ -11,6 +11,7 @@
 #include "pthread_keys.h"
 
 #include <unistd.h>
+#include <algorithm>
 
 namespace cweb {
 namespace tcpserver {

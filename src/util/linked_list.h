@@ -2,7 +2,7 @@
 #define CWEB_UTIL_LINKEDLIST_H_
 
 #include <stddef.h>
-#include <assert.h>
+#include <cassert>
 #include <type_traits>
 
 namespace cweb {

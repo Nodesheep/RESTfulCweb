@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <random>
 #include <sys/stat.h>
+#include <algorithm>
 
 namespace cweb {
 namespace httpserver {

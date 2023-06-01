@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <fcntl.h>
+#include <memory>
 
 namespace cweb {
 namespace tcpserver {

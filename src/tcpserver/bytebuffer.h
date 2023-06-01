@@ -2,6 +2,7 @@
 #define CWEB_UTIL_BYTEBUFFER_H_
 
 #include <string>
+#include <cstring>
 
 namespace cweb {
 namespace tcpserver {

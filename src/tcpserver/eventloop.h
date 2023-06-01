@@ -5,6 +5,7 @@
 #include <vector>
 #include <pthread.h>
 #include <memory>
+#include <functional>
 #include "threadlocal_memorypool.h"
 
 namespace cweb {

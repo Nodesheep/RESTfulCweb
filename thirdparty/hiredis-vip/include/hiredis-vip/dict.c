@@ -35,7 +35,7 @@
 
 #include "fmacros.h"
 #include <stdlib.h>
-#include <assert.h>
+#include <cassert>
 #include <limits.h>
 #include "dict.h"
 

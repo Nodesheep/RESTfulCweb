@@ -1,6 +1,7 @@
 #include "httpparser.h"
 #include "httpsession.h"
 #include "httprequest.h"
+#include <algorithm>
 
 namespace cweb {
 namespace httpserver {
