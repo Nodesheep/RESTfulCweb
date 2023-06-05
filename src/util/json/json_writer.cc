@@ -7,7 +7,7 @@
 #include "json_tool.h"
 #include "writer.h"
 #endif // if !defined(JSON_IS_AMALGAMATION)
-#include <cassert>
+#include <assert.h>
 #include <cstring>
 #include <iomanip>
 #include <memory>

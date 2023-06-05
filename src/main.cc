@@ -112,33 +112,69 @@ int main() {
     
     //mysql
     c.GET("/api/mysql/data", [](std::shared_ptr<Context> c) {
-        MySQLReplyPtr r = c->MySQL()->Cmd("SELECT * FROM person");
-        int rows = r->Rows();
-        Json::Value root;
-        root["cout"] = rows;
-        for(int i = 0; i < rows; ++i) {
-            r->Next();
-            Json::Value p;
-            p["id"] = r->IntValue(0);
-            p["name"] = r->StringValue(1);
-            p["age"] = r->IntValue(2);
-            root["people"].append(p);
-        }
-        
-        std::stringstream body;
+        RedisReplyPtr rr = c->Redis()->Cmd("GET /api/mysql/data");
+        std::stringstream data;
+        Json::Value res;
         Json::StreamWriterBuilder writerBuilder;
         writerBuilder["emitUTF8"] = true;
         std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
-        jsonWriter->write(root, &body);
+        if(rr && rr->str) {
+            res["type"] = "redis cache";
+            res["data"] = rr->str;
+            jsonWriter->write(res, &data);
+            c->JSON(StatusOK, data.str().c_str());
+            return;
+        }
+        
+        MySQLReplyPtr mr = c->MySQL()->Cmd("SELECT * FROM person");
+        int rows = mr->Rows();
+        res["count"] = rows;
+        for(int i = 0; i < rows; ++i) {
+            mr->Next();
+            Json::Value p;
+            p["id"] = mr->IntValue(0);
+            p["name"] = mr->StringValue(1);
+            p["age"] = mr->IntValue(2);
+            res["people"].append(p);
+        }
+        
+        Json::Value res1;
+        res1["type"] = "mysql";
+        res1["data"] = res;
+        
+        jsonWriter->write(res1, &data);
+        c->Redis()->Cmd("SET /api/mysql/data %s PX %d", data.str().c_str(), 10 * 1000);
 
-        LOG(LOGLEVEL_DEBUG, CWEB_MODULE, "mysql", "mysql res: %s", body.str().c_str());
-        c->JSON(StatusOK, body.str());
+        c->JSON(StatusOK, data.str());
     });
     
     //redis
     c.GET("/api/redis/data", [](std::shared_ptr<Context> c) {
         RedisReplyPtr r = c->Redis()->Cmd("GET key_htl_hlea_tlyyyy_ghhtl_aseghlea");
         c->STRING(StatusOK, r->str);
+    });
+    
+    //redis lock
+    c.GET("api/redis/lock", [](std::shared_ptr<Context> c) {
+        struct timespec time;
+        clock_gettime(CLOCK_REALTIME, &time);
+        static std::string key = "lockkey-" + std::to_string(time.tv_nsec);
+        std::string value = c->Redis()->Lock(key, 600 * 1000);
+        if(value.size() > 0) {
+            c->STRING(StatusOK, "lock success key:" + key + "value:" + value);
+        }else {
+            c->STRING(StatusOK, "lock failed key:" + key);
+        }
+    });
+    
+    c.GET("api/redis/unlock/:key/:value", [](std::shared_ptr<Context> c) {
+        LOG(LOGLEVEL_DEBUG, CWEB_MODULE, "redis", "key: %s value: %s", c->Param("key").c_str(), c->Param("value").c_str());
+        bool res = c->Redis()->Unlock(c->Param("key"), c->Param("value"));
+        if(res) {
+            c->STRING(StatusOK, "unlock success");
+        }else {
+            c->STRING(StatusOK, "unlock failed");
+        }
     });
     
     //分组路由

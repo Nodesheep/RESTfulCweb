@@ -90,16 +90,16 @@ RedisReplyPtr Redis::GetReply() {
 std::string Redis::Lock(const std::string &key, uint64_t ms) {
     struct timespec time;
     clock_gettime(CLOCK_REALTIME, &time);
-    std::string uuid = std::to_string(time.tv_nsec);
+    std::string uuid = "lockvalue-" + std::to_string(time.tv_nsec);
     RedisReplyPtr r = Cmd("SET %s %s NX PX %s", key.c_str(), uuid.c_str(), std::to_string(ms).c_str());
-    if(r) {
+    if(r && r->type != REDIS_REPLY_ERROR && r->str) {
         return uuid;
     }
     return "";
 }
 
 bool Redis::Unlock(const std::string &key, const std::string &value) {
-    RedisReplyPtr r = Cmd("EVAL \"if redis.call('get',KEYS[1]) == ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\" 1 %s %s", key.c_str(), value.c_str());
+    RedisReplyPtr r = Cmd("EVAL %s 1 %s %s", "if redis.call('get',KEYS[1]) == ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end", key.c_str(), value.c_str());
     
     if(!r || !r->integer) {
         return false;

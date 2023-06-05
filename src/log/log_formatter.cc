@@ -4,7 +4,7 @@
 #include <functional>
 #include <tuple>
 #include <sys/time.h>
-#include <cassert>
+#include <assert.h>
 
 namespace cweb {
 namespace log {

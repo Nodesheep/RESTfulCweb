@@ -3,7 +3,7 @@
 //#include <sys/uio.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <cassert>
+#include <assert.h>
 
 namespace cweb {
 namespace tcpserver {

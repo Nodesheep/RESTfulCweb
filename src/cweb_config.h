@@ -31,7 +31,7 @@ public:
         Cluster
     };
     
-    Type type = Cluster;
+    Type type = Standalone;
     std::string host = "127.0.0.1";
     int port = 8300;
     std::string addrs = "127.0.0.1:8306,127.0.0.1:8307,127.0.0.1:8308";

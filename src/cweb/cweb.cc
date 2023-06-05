@@ -27,8 +27,12 @@ std::shared_ptr<EventLoop> mainloop(new EventLoop());
 
 Cweb::Cweb(uint16_t port, bool loopbackonly, bool ipv6) {
     LoggerManagerSingleton::GetInstance();
-    assert(RedisPoolSingleton::GetInstance()->Init());
-    assert(MySQLPoolSingleton::GetInstance()->Init());
+    if(!RedisPoolSingleton::GetInstance()->Init()) {
+        LOG(LOGLEVEL_DEBUG, CWEB_MODULE, "cweb", "redis init error");
+    }
+    if(!MySQLPoolSingleton::GetInstance()->Init()) {
+        LOG(LOGLEVEL_DEBUG, CWEB_MODULE, "cweb", "mysql init error");
+    }
     LoggerManagerSingleton::GetInstance();
     router_.reset(new Router());
     httpserver_.reset(new HttpServer(mainloop, port, loopbackonly, ipv6));
@@ -37,8 +41,12 @@ Cweb::Cweb(uint16_t port, bool loopbackonly, bool ipv6) {
 
 Cweb::Cweb(const std::string& ip, uint16_t port, bool ipv6) {
     LoggerManagerSingleton::GetInstance();
-    assert(RedisPoolSingleton::GetInstance()->Init());
-    assert(MySQLPoolSingleton::GetInstance()->Init());
+    if(!RedisPoolSingleton::GetInstance()->Init()) {
+        LOG(LOGLEVEL_DEBUG, CWEB_MODULE, "cweb", "redis init error");
+    }
+    if(!MySQLPoolSingleton::GetInstance()->Init()) {
+        LOG(LOGLEVEL_DEBUG, CWEB_MODULE, "cweb", "mysql init error");
+    }
     router_.reset(new Router());
     httpserver_.reset(new HttpServer(mainloop, ip, port, ipv6));
     httpserver_->SetRequestCallback(std::bind(&Cweb::serverHTTP, this, std::placeholders::_1, std::placeholders::_2));
@@ -71,6 +79,7 @@ void Cweb::serverHTTP(std::shared_ptr<HttpSession> session, std::unique_ptr<Http
 }
 
 void Cweb::Run(int threadcnt) {
+    LOG(LOGLEVEL_DEBUG, CWEB_MODULE, "cweb", "server start success");
     httpserver_->Start(threadcnt);
 }
 

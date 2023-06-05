@@ -19,7 +19,7 @@
  * IN THE SOFTWARE.
  */
 #include "http_parser.h"
-#include <cassert>
+#include <assert.h>
 #include <stddef.h>
 #include <ctype.h>
 #include <string.h>

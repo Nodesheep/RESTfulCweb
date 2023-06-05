@@ -10,7 +10,7 @@
 #include "reader.h"
 #include "value.h"
 #endif // if !defined(JSON_IS_AMALGAMATION)
-#include <cassert>
+#include <assert.h>
 #include <cstring>
 #include <istream>
 #include <limits>
