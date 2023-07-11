@@ -37,7 +37,7 @@ public:
 
         do {
             back = write;
-        }while(!back_.compare_exchange_strong(back, (back + 1) % capacity_ , std::memory_order_release, std::memory_order_relaxed));
+        }while(!back_.compare_exchange_strong(back, (back + 1) % capacity_ , std::memory_order_release));
 
         return true;
     }
@@ -48,8 +48,7 @@ public:
             front = front_.load(std::memory_order_relaxed);
             if(front == back_.load(std::memory_order_acquire)) return false;
             val = data_[front];
-        //pop中对front_的修改需要对push可见
-        }while(!front_.compare_exchange_strong(front, (front + 1) % capacity_, std::memory_order_release, std::memory_order_relaxed));
+        }while(!front_.compare_exchange_strong(front, (front + 1) % capacity_, std::memory_order_release));
         
         return true;
     }

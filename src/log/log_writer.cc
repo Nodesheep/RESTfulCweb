@@ -44,7 +44,7 @@ LogInfo* LogWriter::AllocLogInfo() {
 }
 
 void LogWriter::DeallocLogInfo(LogInfo *info) {
-    logfilepipe_->SinglePush(info);
+    logfilepipe_->MultiplePush(info);
 }
 
 void LogWriter::loop() {
